@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
@@ -16,6 +17,42 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+
+// Dynamic OG Tags for profiles
+app.get('/:slug', async (req, res, next) => {
+  const { slug } = req.params;
+  const reserved = ['login', 'register', 'admin', 'api', 'assets', 'vite'];
+  if (reserved.includes(slug) || slug.includes('.')) return next();
+  
+  try {
+    const { data: profile } = await supabase.from('profiles').select('*').eq('slug', slug).single();
+    
+    // Read index.html from project root
+    const indexPath = path.join(process.cwd(), 'index.html');
+    if (!fs.existsSync(indexPath)) return next();
+    
+    let html = fs.readFileSync(indexPath, 'utf-8');
+    
+    if (profile) {
+      const title = `${profile.display_name} - Smart Cartão`;
+      const description = profile.role_title || 'Meu Cartão Digital';
+      const image = profile.profile_image || 'https://smartcartao.com/og-default.png';
+      
+      html = html.replace('{{title}}', title)
+                 .replace('{{description}}', description)
+                 .replace('{{image}}', image);
+    } else {
+      html = html.replace('{{title}}', 'Smart Cartão')
+                 .replace('{{description}}', 'Crie seu cartão digital agora')
+                 .replace('{{image}}', 'https://smartcartao.com/og-default.png');
+    }
+    
+    res.setHeader('Content-Type', 'text/html');
+    return res.status(200).send(html);
+  } catch (err) {
+    next();
+  }
+});
 
 // Auth Middleware
 const authenticate = (req: any, res: any, next: any) => {
