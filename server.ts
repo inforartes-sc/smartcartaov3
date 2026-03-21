@@ -125,6 +125,9 @@ async function setupApp() {
 
     if (profileError || !profile) return res.status(404).json({ error: 'Perfil não encontrado' });
     
+    // Increment views
+    await supabase.from('profiles').update({ views: (profile.views || 0) + 1 }).eq('id', profile.id);
+
     const { data: products } = await supabase
       .from('products')
       .select('*')

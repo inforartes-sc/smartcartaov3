@@ -124,12 +124,22 @@ export default function AdminDashboard() {
                 </div>
                 <p className="text-xs text-gray-400 mb-4">Compartilhe seu link personalizado com clientes</p>
                 
-                <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl mb-4">
-                  <p className="text-xs text-gray-400 mb-1">URL do seu cartão</p>
-                  <p className="text-blue-600 font-bold break-all">{window.location.origin}/{user.slug}</p>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="md:col-span-2 p-4 bg-gray-50 border border-gray-100 rounded-xl">
+                    <p className="text-xs text-gray-400 mb-1">URL do seu cartão</p>
+                    <p className="text-blue-600 font-bold break-all text-sm">{window.location.origin}/{user.slug}</p>
+                  </div>
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex flex-col justify-center">
+                    <p className="text-[10px] text-blue-400 uppercase font-bold mb-1">Total de Visualizações</p>
+                    <p className="text-xl font-black text-blue-700">{user.views || 0}</p>
+                  </div>
+                  <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl flex flex-col justify-center">
+                    <p className="text-[10px] text-orange-400 uppercase font-bold mb-1">Itens Ativos</p>
+                    <p className="text-xl font-black text-orange-700">{productCount}</p>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
                   <button onClick={copyLink} className="flex items-center justify-center gap-2 py-3 px-4 bg-white border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50 transition-all">
                     <Copy className="w-4 h-4" /> Copiar Link
                   </button>
@@ -142,15 +152,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Stats Card */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative group">
-                <Link to="/admin/produtos" className="absolute top-6 right-6 p-2 bg-blue-50 text-blue-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ExternalLink className="w-4 h-4" />
-                </Link>
-                <p className="text-xs text-gray-400 mb-2">Total de Itens Cadastrados</p>
-                <div className="text-4xl font-bold text-gray-900">{productCount}</div>
-              </div>
-
               {/* Quick Actions */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
@@ -159,7 +160,7 @@ export default function AdminDashboard() {
                 </div>
                 <p className="text-xs text-gray-400 -mt-3 mb-4">Acesse as principais funcionalidades</p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Link to="/admin/produtos" className="bg-white p-6 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center">
                     <Package className="w-8 h-8 text-gray-300 group-hover:text-blue-500 mb-3 transition-colors" />
                     <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Gerenciar Produtos</span>
@@ -167,6 +168,10 @@ export default function AdminDashboard() {
                   <Link to="/admin/perfil" className="bg-white p-6 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center">
                     <User className="w-8 h-8 text-gray-300 group-hover:text-blue-500 mb-3 transition-colors" />
                     <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Editar Perfil</span>
+                  </Link>
+                  <Link to="/admin/tema" className="bg-white p-6 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center">
+                    <Palette className="w-8 h-8 text-gray-300 group-hover:text-blue-500 mb-3 transition-colors" />
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Configurar Tema</span>
                   </Link>
                 </div>
               </div>

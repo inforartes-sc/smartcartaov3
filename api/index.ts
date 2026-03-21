@@ -100,6 +100,10 @@ app.post('/api/auth/change-password', authenticate, async (req: any, res) => {
 app.get('/api/profile/:slug', async (req, res) => {
   const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('slug', req.params.slug).single();
   if (profileError || !profile) return res.status(404).json({ error: 'Perfil não encontrado' });
+  
+  // Increment views
+  await supabase.from('profiles').update({ views: (profile.views || 0) + 1 }).eq('id', profile.id);
+
   const { data: products } = await supabase.from('products').select('*').eq('user_id', profile.id);
   res.json({ user: profile, products: products || [] });
 });
