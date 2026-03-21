@@ -237,9 +237,10 @@ async function setupApp() {
       });
       app.use(vite.middlewares);
     } catch (e) {
-      console.warn('Vite dev server failed to start, this is normal in production on Vercel');
+      console.warn('Vite dev server failed to start');
     }
-  } else {
+  } else if (!isVercel) {
+    // Only serve static files if NOT on Vercel (Vercel handles this via vercel.json)
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
