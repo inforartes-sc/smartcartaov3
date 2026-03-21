@@ -61,7 +61,7 @@ export default function Home() {
     >
       {/* Top Banner with Integrated Marquee */}
       <div 
-        className="w-full h-16 transition-colors duration-500 relative flex items-center overflow-hidden" 
+        className="w-full h-16 transition-colors duration-500 relative flex items-center overflow-hidden sticky top-0 z-50 shadow-lg" 
         style={{ backgroundColor: user.primary_color || '#003da5' }}
       >
         {user.show_marquee && user.marquee_text && (
