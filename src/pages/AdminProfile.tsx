@@ -50,7 +50,7 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
     setFormData({ ...formData, social_links: newList });
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'profile_image' | 'card_bottom_image' = 'profile_image') => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'profile_image' | 'card_bottom_image' | 'card_background_image' = 'profile_image') => {
     try {
       if (!e.target.files || e.target.files.length === 0) return;
       setUploading(true);
@@ -278,6 +278,24 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
 
         <div className="space-y-4 pt-4 border-t border-gray-100">
           <h3 className="font-bold text-gray-900">Customização do Cartão</h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Imagem de Fundo (Página Principal)</label>
+            <div className="relative h-48 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden group">
+              {formData.card_background_image ? (
+                <img src={formData.card_background_image} className="w-full h-full object-cover p-2" alt="Background" />
+              ) : (
+                <div className="text-center text-gray-400">
+                  <Camera className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                  <p className="text-xs">Nenhuma imagem de fundo</p>
+                </div>
+              )}
+              <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
+                <span className="bg-white/20 px-4 py-2 rounded-full font-bold text-sm backdrop-blur-md">Alterar Fundo</span>
+                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'card_background_image')} />
+              </label>
+            </div>
+            <p className="text-[11px] text-gray-400 mt-2 italic px-1">Esta imagem será usada como fundo na tela inicial do seu cartão.</p>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Imagem do Rodapé (Frente do Cartão)</label>
             <div className="relative h-48 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden group">

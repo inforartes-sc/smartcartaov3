@@ -95,10 +95,10 @@ async function setupApp() {
   });
 
   app.put('/api/me', authenticate, async (req: any, res) => {
-    const { display_name, role_title, profile_image, card_bottom_image, footer_text, primary_color, background_color, social_links, marquee_text, show_marquee, marquee_speed, whatsapp, instagram, facebook } = req.body;
+    const { display_name, role_title, profile_image, card_bottom_image, card_background_image, footer_text, primary_color, background_color, social_links, marquee_text, show_marquee, marquee_speed, whatsapp, instagram, facebook } = req.body;
     const { error } = await supabase
       .from('profiles')
-      .update({ display_name, role_title, profile_image, card_bottom_image, footer_text, primary_color, background_color, social_links, marquee_text, show_marquee, marquee_speed, whatsapp, instagram, facebook })
+      .update({ display_name, role_title, profile_image, card_bottom_image, card_background_image, footer_text, primary_color, background_color, social_links, marquee_text, show_marquee, marquee_speed, whatsapp, instagram, facebook })
       .eq('id', req.user.id);
     if (error) return res.status(400).json({ error: error.message });
     res.json({ success: true });

@@ -56,9 +56,20 @@ export default function Home() {
 
   return (
     <div 
-      className="min-h-screen flex flex-col items-center transition-colors duration-500"
-      style={{ backgroundColor: user.background_color || '#ffffff' }}
+      className="min-h-screen flex flex-col items-center transition-colors duration-500 relative"
+      style={{ 
+        backgroundColor: user.background_color || '#ffffff',
+        backgroundImage: user.card_background_image ? `url(${user.card_background_image})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat'
+      }}
     >
+      {/* Background Overlay for readability if image exists */}
+      {user.card_background_image && (
+        <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-0" style={{ backgroundColor: `${user.background_color}99` || 'rgba(255,255,255,0.6)' }} />
+      )}
       {/* Top Banner with Integrated Marquee */}
       <div 
         className="w-full h-16 transition-colors duration-500 relative flex items-center overflow-hidden sticky top-0 z-50 shadow-lg" 
@@ -81,7 +92,7 @@ export default function Home() {
         )}
       </div>
 
-      <main className="w-full max-w-xl px-6 pt-12 flex flex-col items-center text-center">
+      <main className="w-full max-w-xl px-6 pt-12 flex flex-col items-center text-center relative z-10">
         {/* Profile Image */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}

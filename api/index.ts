@@ -114,7 +114,7 @@ app.get('/api/me', authenticate, async (req: any, res) => {
 });
 
 app.put('/api/me', authenticate, async (req: any, res) => {
-  const fields = ['display_name', 'role_title', 'profile_image', 'card_bottom_image', 'footer_text', 'primary_color', 'background_color', 'social_links', 'marquee_text', 'show_marquee', 'marquee_speed', 'whatsapp', 'instagram', 'facebook'];
+  const fields = ['display_name', 'role_title', 'profile_image', 'card_bottom_image', 'card_background_image', 'footer_text', 'primary_color', 'background_color', 'social_links', 'marquee_text', 'show_marquee', 'marquee_speed', 'whatsapp', 'instagram', 'facebook'];
   const updateData: any = {};
   fields.forEach(f => { if (req.body[f] !== undefined) updateData[f] = req.body[f]; });
   
