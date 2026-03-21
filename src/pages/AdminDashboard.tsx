@@ -109,6 +109,12 @@ export default function AdminDashboard() {
             Sair
           </button>
         </div>
+        
+        {/* Fixed Branding */}
+        <div className="p-6 mt-auto border-t border-gray-50 flex flex-col items-center justify-center">
+          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-1">Plataforma</span>
+          <span className="text-sm font-black text-blue-900 tracking-tighter">SMART CARTÃO</span>
+        </div>
       </aside>
 
       {/* Main Content */}
