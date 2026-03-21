@@ -294,6 +294,15 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
                 <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'card_background_image')} />
               </label>
             </div>
+            {formData.card_background_image && (
+              <button 
+                type="button" 
+                onClick={() => setFormData({ ...formData, card_background_image: '' })}
+                className="mt-2 text-[10px] font-bold text-red-500 flex items-center gap-1 hover:text-red-600 transition-colors uppercase tracking-tight"
+              >
+                <Trash2 className="w-3 h-3" /> Remover Imagem de Fundo
+              </button>
+            )}
             <p className="text-[11px] text-gray-400 mt-2 italic px-1">Esta imagem será usada como fundo na tela inicial do seu cartão.</p>
           </div>
           <div>
