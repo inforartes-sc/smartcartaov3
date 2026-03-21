@@ -22,15 +22,20 @@ export default function Login() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        login(data.user);
-        navigate('/admin');
-      } else {
-        setError(data.error || 'Erro ao fazer login');
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        if (res.ok) {
+          login(data.user);
+          navigate('/admin');
+        } else {
+          setError(data.error || 'Erro ao fazer login');
+        }
+      } catch (e) {
+        setError(`Erro no Servidor (${res.status}): ${text.substring(0, 50)}...`);
       }
-    } catch (err) {
-      setError('Erro de conexão');
+    } catch (err: any) {
+      setError(`Erro de conexão: ${err.message}`);
     } finally {
       setLoadingAction(false);
     }
