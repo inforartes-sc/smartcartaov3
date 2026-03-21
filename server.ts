@@ -24,7 +24,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
 
-async function startServer() {
+async function createApp() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
 
@@ -268,9 +268,21 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  return app;
+}
+
+// For Local server start
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  createApp().then(app => {
+    const PORT = Number(process.env.PORT) || 3000;
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
   });
 }
 
-startServer();
+// Export the factory for Vercel
+export default async (req: any, res: any) => {
+  const app = await createApp();
+  app(req, res);
+};
