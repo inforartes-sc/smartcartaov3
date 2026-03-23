@@ -48,10 +48,16 @@ export default function AdminProducts() {
     color: '',
     optionals: [] as string[],
     show_consortium_plans: false,
-    consortium_plans: [] as { installments: number; value: string }[]
+    consortium_plans: [] as { installments: number; value: string }[],
+    show_financing_plans: false,
+    financing_plans: [] as { down_payment: string; installments: number; value: string }[],
+    cash_price: '',
+    card_installments: '',
+    card_interest: true
   });
 
   const [newPlan, setNewPlan] = useState({ installments: 0, value: '' });
+  const [newFinancingPlan, setNewFinancingPlan] = useState({ down_payment: '', installments: 0, value: '' });
 
 
 
@@ -162,7 +168,12 @@ export default function AdminProducts() {
       color: product.color || '',
       optionals: typeof product.optionals === 'string' ? JSON.parse(product.optionals) : (product.optionals || []),
       show_consortium_plans: !!product.show_consortium_plans,
-      consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || [])
+      consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || []),
+      show_financing_plans: !!product.show_financing_plans,
+      financing_plans: typeof product.financing_plans === 'string' ? JSON.parse(product.financing_plans) : (product.financing_plans || []),
+      cash_price: product.cash_price || '',
+      card_installments: product.card_installments || '',
+      card_interest: product.card_interest !== undefined ? !!product.card_interest : true
     });
     setShowAddForm(true);
   };
@@ -191,7 +202,12 @@ export default function AdminProducts() {
       color: product.color || '',
       optionals: typeof product.optionals === 'string' ? JSON.parse(product.optionals) : (product.optionals || []),
       show_consortium_plans: !!product.show_consortium_plans,
-      consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || [])
+      consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || []),
+      show_financing_plans: !!product.show_financing_plans,
+      financing_plans: typeof product.financing_plans === 'string' ? JSON.parse(product.financing_plans) : (product.financing_plans || []),
+      cash_price: product.cash_price || '',
+      card_installments: product.card_installments || '',
+      card_interest: product.card_interest !== undefined ? !!product.card_interest : true
     });
     setShowAddForm(true);
   };
@@ -221,9 +237,15 @@ export default function AdminProducts() {
       color: '',
       optionals: [],
       show_consortium_plans: false,
-      consortium_plans: []
+      consortium_plans: [],
+      show_financing_plans: false,
+      financing_plans: [],
+      cash_price: '',
+      card_installments: '',
+      card_interest: true
     });
     setNewPlan({ installments: 0, value: '' });
+    setNewFinancingPlan({ down_payment: '', installments: 0, value: '' });
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,6 +297,44 @@ export default function AdminProducts() {
         return;
     }
     setNewPlan({ ...newPlan, value: result });
+  };
+
+  const handleCashPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    const options = { minimumFractionDigits: 2 };
+    const result = new Intl.NumberFormat('pt-BR', options).format(parseFloat(value) / 100);
+    setFormState({ ...formState, cash_price: value === "" ? "" : result });
+  };
+
+  const handleFinancingDownPaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    const options = { minimumFractionDigits: 2 };
+    const result = new Intl.NumberFormat('pt-BR', options).format(parseFloat(value) / 100);
+    setNewFinancingPlan({ ...newFinancingPlan, down_payment: value === "" ? "" : result });
+  };
+
+  const handleFinancingValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    const options = { minimumFractionDigits: 2 };
+    const result = new Intl.NumberFormat('pt-BR', options).format(parseFloat(value) / 100);
+    setNewFinancingPlan({ ...newFinancingPlan, value: value === "" ? "" : result });
+  };
+
+  const addFinancingPlan = () => {
+    if (newFinancingPlan.installments > 0 && newFinancingPlan.value && newFinancingPlan.down_payment) {
+      setFormState(prev => ({
+        ...prev,
+        financing_plans: [...prev.financing_plans, newFinancingPlan]
+      }));
+      setNewFinancingPlan({ down_payment: '', installments: 0, value: '' });
+    }
+  };
+
+  const removeFinancingPlan = (index: number) => {
+    setFormState(prev => ({
+      ...prev,
+      financing_plans: prev.financing_plans.filter((_, i) => i !== index)
+    }));
   };
 
   const addColor = () => {
@@ -582,6 +642,135 @@ export default function AdminProducts() {
                         Adicionar
                       </button>
                     </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Seção Plano de Financiamento */}
+              <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-lg font-bold text-gray-800">Planos de Financiamento</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Habilitar Planos</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormState(prev => ({ ...prev, show_financing_plans: !prev.show_financing_plans }))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formState.show_financing_plans ? 'bg-blue-600' : 'bg-gray-200'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formState.show_financing_plans ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {formState.show_financing_plans && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase text-blue-600">Valor à Vista</label>
+                        <input
+                          type="text"
+                          value={formState.cash_price}
+                          onChange={handleCashPriceChange}
+                          placeholder="R$ 0,00"
+                          className="w-full px-4 py-2.5 bg-white border border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-blue-700"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase text-blue-600">Parcelas Cartão</label>
+                        <input
+                          type="text"
+                          value={formState.card_installments}
+                          onChange={(e) => setFormState({ ...formState, card_installments: e.target.value })}
+                          placeholder="Ex: 10x"
+                          className="w-full px-4 py-2.5 bg-white border border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        />
+                      </div>
+                      <div className="flex items-center pt-5">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={formState.card_interest}
+                            onChange={(e) => setFormState({ ...formState, card_interest: e.target.checked })}
+                            className="w-5 h-5 text-blue-600 focus:ring-blue-500 border-blue-200 rounded-lg cursor-pointer"
+                          />
+                          <span className="text-xs font-bold text-gray-500 group-hover:text-blue-600 transition-colors uppercase select-none">Com Juros</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="block text-sm font-bold text-gray-700 uppercase tracking-tight">Opções de Financiamento</label>
+                      {formState.financing_plans.map((plan, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-4 bg-white border border-blue-100 rounded-2xl shadow-sm">
+                          <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold text-gray-400 uppercase">Entrada:</span>
+                              <span className="text-blue-700 font-bold">R$ {plan.down_payment}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold text-gray-400 uppercase">Restante:</span>
+                              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">{plan.installments}x</span>
+                              <span className="text-gray-700 font-medium font-heading">de <span className="text-blue-700 font-bold">R$ {plan.value}</span> /mês</span>
+                            </div>
+                          </div>
+                          <button 
+                            type="button"
+                            onClick={() => removeFinancingPlan(idx)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="p-4 bg-white border border-dashed border-blue-200 rounded-2xl flex flex-wrap items-center gap-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase ml-1">Entrada</span>
+                        <input
+                          type="text"
+                          value={newFinancingPlan.down_payment}
+                          onChange={handleFinancingDownPaymentChange}
+                          placeholder="R$ 0,00"
+                          className="w-32 px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase ml-1">Parcelas</span>
+                        <input
+                          type="number"
+                          value={newFinancingPlan.installments || ''}
+                          onChange={(e) => setNewFinancingPlan({ ...newFinancingPlan, installments: parseInt(e.target.value) || 0 })}
+                          placeholder="Qtd"
+                          className="w-20 px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-center font-bold"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase ml-1">Valor Parcela</span>
+                        <input
+                          type="text"
+                          value={newFinancingPlan.value}
+                          onChange={handleFinancingValueChange}
+                          placeholder="R$ 0,00"
+                          className="w-32 px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addFinancingPlan}
+                        className="mt-5 flex items-center gap-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md active:scale-95"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Adicionar
+                      </button>
+                    </div>
+                    
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center py-2 animate-pulse">
+                      Sujeito a análise de crédito
+                    </p>
                   </div>
                 )}
               </div>

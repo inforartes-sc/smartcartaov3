@@ -34,6 +34,7 @@ export default function MasterLanding() {
     landing_hero_subtitle: 'Essa é a ferramenta definitiva que os grandes vendedores usam para dominar o mercado digital.',
     landing_hero_cta: 'Começar Agora',
     landing_stats_text: '+425 Clientes Satisfeitos',
+    landing_stats_description: 'Nossa plataforma é referência em inovação e resultados reais no mercado digital.',
     
     landing_concept_title: 'MUITO MAIS QUE UM SIMPLES LINK.',
     landing_concept_subtitle: 'É sua identidade profissional completa no bolso do seu cliente.',
@@ -138,13 +139,7 @@ export default function MasterLanding() {
       const res = await fetch('/api/admin/settings');
       if (res.ok) {
         const data = await res.json();
-        const merged = { ...settings };
-        Object.keys(settings).forEach(key => {
-          if (data[key] !== undefined && data[key] !== null && data[key] !== '') {
-            (merged as any)[key] = data[key];
-          }
-        });
-        setSettings(merged);
+        setSettings(prev => ({ ...prev, ...data }));
       }
     } catch (err) {
       toast.error('Erro ao carregar configurações');
@@ -179,6 +174,7 @@ export default function MasterLanding() {
       });
       if (res.ok) {
         toast.success('Landing Page atualizada com sucesso!');
+        fetchSettings(); // Refresh to ensure synchronization
       } else {
         toast.error('Erro ao salvar no servidor');
       }

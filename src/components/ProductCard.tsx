@@ -11,8 +11,9 @@ export interface ProductCardProps {
   whatsappNumber?: string;
   primaryColor?: string;
   backgroundColor?: string;
-  activeModalProductId?: number | null;
+  activeModalProductId?: string | number | null;
   onCloseModal?: () => void;
+  allProducts?: Product[];
 }
 
 export default function ProductCard({ 
@@ -21,7 +22,8 @@ export default function ProductCard({
   primaryColor, 
   backgroundColor,
   activeModalProductId,
-  onCloseModal
+  onCloseModal,
+  allProducts
 }: ProductCardProps) {
   const [activeModal, setActiveModal] = useState<'about' | 'consortium' | 'financing' | 'liberacred' | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -120,20 +122,20 @@ export default function ProductCard({
             Sobre o veículo
           </button>
           
-          {product.has_consortium !== false && (
+          {(product.has_consortium !== false || product.show_financing_plans) && (
             <button
-              onClick={() => setActiveModal('consortium')}
+              onClick={() => setActiveModal('plans')}
               className="w-full py-2 px-4 bg-[#3b71ca] hover:bg-[#305eb0] text-white rounded-md transition-all text-xs font-bold uppercase"
             >
-              Plano de Consórcio
+              Consórcio / Financiamento
             </button>
           )}
-          
+
           <button
             onClick={() => setActiveModal('financing')}
             className="w-full py-2 px-4 bg-[#a8328f] hover:bg-[#8a2975] text-white rounded-md transition-colors text-xs font-bold uppercase"
           >
-            Financiamento
+            Simular Financiamento
           </button>
 
           {product.hasLiberacred && (
@@ -307,35 +309,107 @@ export default function ProductCard({
         </Modal>
 
       <Modal
-        isOpen={activeModal === 'consortium'}
+        isOpen={activeModal === 'plans'}
         onClose={handleModalClose}
-        title="Plano de Consórcio"
+        title="Consórcio e Financiamento"
       >
         <div className="space-y-6">
-          {product.show_consortium_plans && product.consortium_plans && product.consortium_plans.length > 0 && (
-            <div className="grid grid-cols-1 gap-3">
-              {product.consortium_plans.map((plan, idx) => (
-                <div key={idx} className="flex items-center justify-between p-5 bg-purple-50 border border-purple-100 rounded-2xl shadow-sm">
-                  <div className="flex items-center gap-4">
-                    <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-black">{plan.installments}x</span>
-                    <span className="text-gray-700 font-medium">de <span className="text-purple-700 font-extrabold text-lg">R$ {plan.value}</span> /mês</span>
+          {/* Plano de Financiamento (Seção Superior) */}
+          {product.show_financing_plans && (
+            <div className="space-y-4">
+              <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 space-y-3">
+                <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                  <Calculator className="w-3 h-3" />
+                  Simulações de Financiamento
+                </h4>
+                
+                {product.cash_price && (
+                  <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase">À Vista</span>
+                    <span className="text-lg font-black text-blue-700 text-right">R$ {product.cash_price}</span>
                   </div>
-                  <Calculator className="w-5 h-5 text-purple-300" />
+                )}
+                
+                {product.card_installments && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase">No Cartão</span>
+                    <span className="text-xs font-bold text-gray-800">
+                      {product.card_installments} {product.card_interest ? 'c/ Juros' : 's/ Juros'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {product.financing_plans && product.financing_plans.length > 0 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {product.financing_plans.map((plan, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-5 bg-blue-50/30 border border-blue-100 rounded-2xl shadow-sm transition-all hover:bg-blue-50">
+                      <div className="flex items-center gap-4">
+                        <div className="flex flex-col">
+                           <span className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-1">Entrada R$ {plan.down_payment}</span>
+                           <div className="flex items-center gap-3">
+                             <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-black">{plan.installments}x</span>
+                             <span className="text-gray-700 font-medium">de <span className="text-blue-700 font-extrabold text-lg">R$ {plan.value}</span> /mês</span>
+                           </div>
+                        </div>
+                      </div>
+                      <Calculator className="w-5 h-5 text-blue-200" />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+              
+              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest text-center italic py-1">
+                * Sujeito a análise de crédito
+              </p>
+            </div>
+          )}
+
+          {/* Plano de Consórcio (Seção Inferior) */}
+          {(product.show_consortium_plans || product.consortium_plans?.length > 0) && (
+            <div className="space-y-4 pt-4 border-t border-gray-100">
+              <h4 className="text-[10px] font-black text-purple-600 uppercase tracking-widest flex items-center gap-2 px-1">
+                <Calculator className="w-3 h-3" />
+                Planos de Consórcio
+              </h4>
+              
+              {product.consortium_plans && product.consortium_plans.length > 0 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {product.consortium_plans.map((plan, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-5 bg-purple-50/30 border border-purple-100 rounded-2xl shadow-sm transition-all hover:bg-purple-50">
+                      <div className="flex items-center gap-4">
+                        <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-black">{plan.installments}x</span>
+                        <span className="text-gray-700 font-medium">de <span className="text-purple-700 font-extrabold text-lg">R$ {plan.value}</span> /mês</span>
+                      </div>
+                      <Calculator className="w-5 h-5 text-purple-200" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           
+          {/* Imagem de Referência */}
           {product.consortiumPlanImage ? (
-            <div className="space-y-4">
-              {product.show_consortium_plans && <h4 className="font-bold text-gray-700 px-1">Tabela de Referência</h4>}
-              <img src={product.consortiumPlanImage} alt="Plano de Consórcio" className="w-full rounded-xl shadow-md" referrerPolicy="no-referrer" />
+            <div className="space-y-4 pt-4 border-t border-gray-100">
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Tabela de Referência</h4>
+              <img src={product.consortiumPlanImage} alt="Referência" className="w-full rounded-xl shadow-md" referrerPolicy="no-referrer" />
             </div>
-          ) : (!product.show_consortium_plans || !product.consortium_plans || product.consortium_plans.length === 0) && (
-            <div className="p-8 text-center text-gray-500">
-              Informações do plano de consórcio em breve.
+          ) : (!product.show_consortium_plans && !product.show_financing_plans) && (
+            <div className="p-8 text-center text-gray-400 text-sm italic">
+              Informações de planos indisponíveis para este veículo.
             </div>
           )}
+
+          <div className="pt-2">
+            <button
+              onClick={() => setActiveModal('financing')}
+              className="w-full py-4 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl transition-all text-sm font-black uppercase shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
+            >
+              <MessageCircle className="w-5 h-5" />
+              Solicitar Análise de Crédito
+            </button>
+          </div>
         </div>
       </Modal>
 
@@ -346,6 +420,10 @@ export default function ProductCard({
       >
         <FinancingForm 
           initialModel={product.name} 
+          initialProductId={product.id}
+          initialColor={product.color}
+          allProducts={allProducts}
+          whatsappNumber={whatsappNumber}
           onSubmitSuccess={() => setActiveModal(null)} 
         />
       </Modal>

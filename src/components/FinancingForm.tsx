@@ -4,10 +4,14 @@ import { Send } from 'lucide-react';
 
 interface FinancingFormProps {
   initialModel?: string;
+  initialProductId?: string | number;
+  initialColor?: string;
+  allProducts?: any[];
+  whatsappNumber?: string;
   onSubmitSuccess: () => void;
 }
 
-export default function FinancingForm({ initialModel, onSubmitSuccess }: FinancingFormProps) {
+export default function FinancingForm({ initialModel, initialProductId, initialColor, allProducts, whatsappNumber, onSubmitSuccess }: FinancingFormProps) {
   const [formData, setFormData] = useState<FinancingFormData>({
     nome: '',
     cidade: '',
@@ -15,19 +19,43 @@ export default function FinancingForm({ initialModel, onSubmitSuccess }: Financi
     cpf: '',
     telefone: '',
     modelo: initialModel || '',
+    modelo_id: initialProductId || '',
     entrada: '',
     status: 'assalariado',
     cnh: 'sim',
-    renda: ''
+    renda: '',
+    cep: '',
+    cor: initialColor || ''
   });
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>(allProducts || []);
 
   useEffect(() => {
-    fetch('/api/products')
-      .then(res => res.json())
-      .then(data => setProducts(Array.isArray(data) ? data : []))
-      .catch(err => console.error('Error fetching products for simulation:', err));
-  }, []);
+    if (!allProducts) {
+      fetch('/api/products')
+        .then(res => res.json())
+        .then(data => setProducts(Array.isArray(data) ? data : []))
+        .catch(err => console.error('Error fetching products for simulation:', err));
+    } else {
+      setProducts(allProducts);
+    }
+  }, [allProducts]);
+
+  useEffect(() => {
+     // If modelo_id or products change, try to find the vehicle data
+     if (formData.modelo_id || formData.modelo) {
+        const found = products.find(p => 
+           (formData.modelo_id && String(p.id) === String(formData.modelo_id)) ||
+           (!formData.modelo_id && p.name === formData.modelo)
+        );
+        if (found) {
+           setFormData(prev => ({ 
+              ...prev, 
+              modelo: found.name,
+              cor: found.color || '' 
+           }));
+        }
+     }
+  }, [formData.modelo_id, products]);
 
   const maskCpf = (value: string) => {
     return value
@@ -64,6 +92,13 @@ export default function FinancingForm({ initialModel, onSubmitSuccess }: Financi
       .replace(/(\d{4})\d+?$/, '$1');
   };
 
+  const maskCep = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{5})(\d)/, '$1-$2')
+      .replace(/(-\d{3})\d+?$/, '$1');
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     let maskedValue = value;
@@ -72,6 +107,7 @@ export default function FinancingForm({ initialModel, onSubmitSuccess }: Financi
     if (name === 'telefone') maskedValue = maskPhone(value);
     if (name === 'entrada' || name === 'renda') maskedValue = maskCurrency(value);
     if (name === 'nascimento') maskedValue = maskDate(value);
+    if (name === 'cep') maskedValue = maskCep(value);
 
     setFormData(prev => ({ ...prev, [name]: maskedValue }));
   };
@@ -83,17 +119,20 @@ export default function FinancingForm({ initialModel, onSubmitSuccess }: Financi
     const message = `Olá! Vim pelo seu Cartão Digital. Gostaria de uma simulação de financiamento:
 Nome: ${formData.nome}
 Cidade: ${formData.cidade}
+CEP: ${formData.cep}
 Nascimento: ${formData.nascimento}
 CPF: ${formData.cpf}
 Telefone: ${formData.telefone}
 Modelo: ${formData.modelo}
+Cor do Veículo: ${formData.cor}
 Entrada: ${formData.entrada}
 Status: ${formData.status}
 CNH: ${formData.cnh}
 Renda: ${formData.renda}`;
     
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/5597984094999?text=${encodedMessage}`, '_blank');
+    const phone = whatsappNumber || '5597984094999';
+    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
     onSubmitSuccess();
   };
 
@@ -125,6 +164,20 @@ Renda: ${formData.renda}`;
           />
         </div>
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+          <input
+            type="text"
+            name="cep"
+            required
+            value={formData.cep}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            placeholder="00000-000"
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
           <input
             type="text"
@@ -136,8 +189,6 @@ Renda: ${formData.renda}`;
             placeholder="DD/MM/AAAA"
           />
         </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
           <input
@@ -150,33 +201,47 @@ Renda: ${formData.renda}`;
             placeholder="000.000.000-00"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-          <input
-            type="text"
-            name="telefone"
-            required
-            value={formData.telefone}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            placeholder="(00) 00000-0000"
-          />
-        </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Modelo do Veículo</label>
-        <select
-          name="modelo"
+        <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+        <input
+          type="text"
+          name="telefone"
           required
-          value={formData.modelo}
+          value={formData.telefone}
           onChange={handleChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
-        >
-          <option value="">Selecione um modelo</option>
-          {products.map((p) => (
-            <option key={p.id} value={p.name}>{p.name}</option>
-          ))}
-        </select>
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          placeholder="(00) 00000-0000"
+        />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Modelo do Veículo</label>
+          <select
+            name="modelo_id"
+            required
+            value={formData.modelo_id}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white font-medium"
+          >
+            <option value="">Selecione um modelo</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Cor do Veículo</label>
+          <input
+            type="text"
+            name="cor"
+            required
+            value={formData.cor}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            placeholder="Cor do veículo"
+          />
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>

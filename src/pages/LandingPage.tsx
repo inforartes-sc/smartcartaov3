@@ -202,7 +202,7 @@ export default function LandingPage() {
   }
 
   // Helper for fallsbacks
-  const getS = (key: string, def: string) => (settings && settings[key] && settings[key].trim() !== '') ? settings[key] : def;
+  const getS = (key: string, def: string) => (settings && settings[key] !== undefined && settings[key] !== null) ? settings[key] : def;
 
   const heroTitleParts = getS('landing_hero_title', 'REVOLUCIONE SUAS VENDAS').split(' ');
   const heroTitleFirst = heroTitleParts[0];

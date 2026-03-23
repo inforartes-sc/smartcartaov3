@@ -358,13 +358,19 @@ export default function Catalog() {
                         images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || []),
                         optionals: typeof product.optionals === 'string' ? JSON.parse(product.optionals) : (product.optionals || []),
                         show_consortium_plans: !!product.show_consortium_plans,
-                        consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || [])
+                        consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || []),
+                        show_financing_plans: !!product.show_financing_plans,
+                        financing_plans: typeof product.financing_plans === 'string' ? JSON.parse(product.financing_plans) : (product.financing_plans || []),
+                        cash_price: product.cash_price,
+                        card_installments: product.card_installments,
+                        card_interest: !!product.card_interest
                       }} 
                       whatsappNumber={user.whatsapp}
                       primaryColor={user.primary_color}
                       backgroundColor={user.background_color}
                       activeModalProductId={activeModalProductId}
                       onCloseModal={() => setActiveModalProductId(null)}
+                      allProducts={products}
                     />
                   </div>
                 ))}
@@ -397,13 +403,19 @@ export default function Catalog() {
                           images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || []),
                           optionals: typeof product.optionals === 'string' ? JSON.parse(product.optionals) : (product.optionals || []),
                           show_consortium_plans: !!product.show_consortium_plans,
-                          consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || [])
+                          consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || []),
+                          show_financing_plans: !!product.show_financing_plans,
+                          financing_plans: typeof product.financing_plans === 'string' ? JSON.parse(product.financing_plans) : (product.financing_plans || []),
+                          cash_price: product.cash_price,
+                          card_installments: product.card_installments,
+                          card_interest: !!product.card_interest
                         }} 
                         whatsappNumber={user.whatsapp}
                         primaryColor={user.primary_color}
                         backgroundColor={user.background_color}
                         activeModalProductId={activeModalProductId}
                         onCloseModal={() => setActiveModalProductId(null)}
+                        allProducts={products}
                       />
                     </div>
                   ))}

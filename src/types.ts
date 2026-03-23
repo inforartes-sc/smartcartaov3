@@ -24,6 +24,11 @@ export interface Product {
   has_consortium?: boolean;
   show_consortium_plans?: boolean;
   consortium_plans?: { installments: number; value: string }[];
+  show_financing_plans?: boolean;
+  financing_plans?: { down_payment: string; installments: number; value: string }[];
+  cash_price?: string;
+  card_installments?: string;
+  card_interest?: boolean;
 }
 
 export interface FinancingFormData {
@@ -33,8 +38,11 @@ export interface FinancingFormData {
   cpf: string;
   telefone: string;
   modelo: string;
+  modelo_id?: string | number;
   entrada: string;
   status: 'assalariado' | 'autonomo';
   cnh: 'sim' | 'nao';
   renda: string;
+  cep: string;
+  cor: string;
 }

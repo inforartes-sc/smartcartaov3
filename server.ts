@@ -120,6 +120,7 @@ async function setupApp() {
 
   // Public settings
   app.get('/api/settings', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     const { data, error } = await supabase.from('system_settings').select('*').eq('id', 1).single();
     if (error) return res.status(400).json({ error: error.message });
     res.json(data);
@@ -362,8 +363,34 @@ async function setupApp() {
     }
   });
 
+  app.put('/api/admin/users/:id/password', authenticateMaster, async (req: any, res) => {
+    const { password } = req.body;
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(req.params.id, { password });
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.put('/api/admin/users/:id/admin', authenticateMaster, async (req: any, res) => {
+    const { is_admin } = req.body;
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_admin: !!is_admin })
+        .eq('id', req.params.id);
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
   // Global Settings Routes
   app.get('/api/admin/settings', authenticateMaster, async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     const { data: settings, error } = await supabase.from('system_settings').select('*').eq('id', 1).single();
     if (error) return res.status(400).json({ error: error.message });
     res.json(settings);
@@ -461,6 +488,7 @@ async function setupApp() {
   });
 
   app.get('/api/public/settings', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     const { data: settings } = await supabase.from('system_settings').select('*').eq('id', 1).single();
     res.json(settings || {});
   });
@@ -578,7 +606,12 @@ async function setupApp() {
         color,
         optionals: Array.isArray(optionals) ? JSON.stringify(optionals) : (optionals || '[]'),
         show_consortium_plans: !!show_consortium_plans,
-        consortium_plans: Array.isArray(consortium_plans) ? JSON.stringify(consortium_plans) : (consortium_plans || '[]')
+        consortium_plans: Array.isArray(consortium_plans) ? JSON.stringify(consortium_plans) : (consortium_plans || '[]'),
+        show_financing_plans: !!req.body.show_financing_plans,
+        financing_plans: Array.isArray(req.body.financing_plans) ? JSON.stringify(req.body.financing_plans) : (req.body.financing_plans || '[]'),
+        cash_price: req.body.cash_price || null,
+        card_installments: req.body.card_installments || null,
+        card_interest: !!req.body.card_interest
       })
       .select('id')
       .single();
@@ -613,7 +646,12 @@ async function setupApp() {
         color,
         optionals: Array.isArray(optionals) ? JSON.stringify(optionals) : (optionals || '[]'),
         show_consortium_plans: !!show_consortium_plans,
-        consortium_plans: Array.isArray(consortium_plans) ? JSON.stringify(consortium_plans) : (consortium_plans || '[]')
+        consortium_plans: Array.isArray(consortium_plans) ? JSON.stringify(consortium_plans) : (consortium_plans || '[]'),
+        show_financing_plans: !!req.body.show_financing_plans,
+        financing_plans: Array.isArray(req.body.financing_plans) ? JSON.stringify(req.body.financing_plans) : (req.body.financing_plans || '[]'),
+        cash_price: req.body.cash_price || null,
+        card_installments: req.body.card_installments || null,
+        card_interest: !!req.body.card_interest
       })
       .eq('id', parseInt(req.params.id))
       .eq('user_id', req.user.id);
