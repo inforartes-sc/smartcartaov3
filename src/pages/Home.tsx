@@ -99,7 +99,8 @@ export default function Home() {
           <img
             src={user.profile_image}
             alt={user.display_name}
-            className="w-full h-full object-cover rounded-full border-4 border-white shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
+            className="w-full h-full object-cover rounded-full border-4 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
+            style={{ borderColor: user.primary_color || '#003da5' }}
             referrerPolicy="no-referrer"
           />
         </motion.div>

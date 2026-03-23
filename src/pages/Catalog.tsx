@@ -136,7 +136,8 @@ export default function Catalog() {
                 <img
                   src={user.profile_image || "https://omeucartao.com.br/wp-content/uploads/2024/11/Rose-256x300.png"}
                   alt={user.display_name}
-                  className="w-full h-full object-cover rounded-full border-4 border-white shadow-xl"
+                  className="w-full h-full object-cover rounded-full border-4 shadow-xl"
+                  style={{ borderColor: user.primary_color || '#003da5' }}
                   referrerPolicy="no-referrer"
                 />
               </motion.div>
@@ -231,7 +232,8 @@ export default function Catalog() {
               <img
                 src={user.profile_image || "https://omeucartao.com.br/wp-content/uploads/2024/11/Rose-256x300.png"}
                 alt={user.display_name}
-                className="w-full h-full object-cover rounded-full border-4 border-white shadow-xl"
+                className="w-full h-full object-cover rounded-full border-4 shadow-xl"
+                style={{ borderColor: user.primary_color || '#003da5' }}
                 referrerPolicy="no-referrer"
               />
             </motion.div>
