@@ -45,5 +45,6 @@ export interface FinancingFormData {
   renda: string;
   cep: string;
   endereco: string;
+  bairro: string;
   cor: string;
 }

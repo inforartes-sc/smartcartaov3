@@ -26,6 +26,7 @@ export default function FinancingForm({ initialModel, initialProductId, initialC
     renda: '',
     cep: '',
     endereco: '',
+    bairro: '',
     cor: initialColor || ''
   });
   const [products, setProducts] = useState<any[]>(allProducts || []);
@@ -122,6 +123,7 @@ Nome: ${formData.nome}
 Cidade: ${formData.cidade}
 CEP: ${formData.cep}
 Endereço: ${formData.endereco}
+Bairro: ${formData.bairro}
 Nascimento: ${formData.nascimento}
 CPF: ${formData.cpf}
 Telefone: ${formData.telefone}
@@ -187,7 +189,19 @@ Renda: ${formData.renda}`;
           value={formData.endereco}
           onChange={handleChange}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-          placeholder="Rua, número, bairro..."
+          placeholder="Rua e número..."
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+        <input
+          type="text"
+          name="bairro"
+          required
+          value={formData.bairro}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          placeholder="Seu bairro"
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
