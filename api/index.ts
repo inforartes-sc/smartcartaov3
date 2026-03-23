@@ -32,8 +32,8 @@ const authenticateMaster = (req: any, res: any, next: any) => {
   if (!token) return res.status(401).json({ error: 'Não autorizado' });
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
-    if (decoded.email !== 'master@smartcartao.com' && decoded.email !== 'adm@smartcartao.com') {
-      return res.status(403).json({ error: 'Acesso negado' });
+    if (decoded.email !== 'master@smartcartao.com' && decoded.email !== 'adm@smartcartao.com' && decoded.email !== 'admin@smartcartao.com') {
+      return res.status(403).json({ error: `Acesso negado para ${decoded.email}` });
     }
     req.user = decoded;
     next();
