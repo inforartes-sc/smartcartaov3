@@ -14,6 +14,34 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
 
+// Auth Middlewares (Defined first to avoid hoisting issues)
+const authenticate = (req: any, res: any, next: any) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ error: 'Não autorizado' });
+  try {
+    const decoded: any = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: 'Token inválido' });
+  }
+};
+
+const authenticateMaster = (req: any, res: any, next: any) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ error: 'Não autorizado' });
+  try {
+    const decoded: any = jwt.verify(token, JWT_SECRET);
+    if (decoded.email !== 'master@smartcartao.com' && decoded.email !== 'adm@smartcartao.com') {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: 'Token inválido' });
+  }
+};
+
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
@@ -39,18 +67,7 @@ app.get('/api/testimonials', async (req, res) => {
 
 
 
-// Auth Middleware
-const authenticate = (req: any, res: any, next: any) => {
-  const token = req.cookies.token;
-  if (!token) return res.status(401).json({ error: 'Não autorizado' });
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    res.status(401).json({ error: 'Token inválido' });
-  }
-};
+// Auth Middlewares moved to top
 
 // API Routes
 app.post('/api/auth/register', authenticateMaster, async (req, res) => {
@@ -129,20 +146,7 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-const authenticateMaster = (req: any, res: any, next: any) => {
-  const token = req.cookies.token;
-  if (!token) return res.status(401).json({ error: 'Não autorizado' });
-  try {
-    const decoded: any = jwt.verify(token, JWT_SECRET);
-    if (decoded.email !== 'master@smartcartao.com' && decoded.email !== 'adm@smartcartao.com') {
-      return res.status(403).json({ error: 'Acesso negado' });
-    }
-    req.user = decoded;
-    next();
-  } catch (err) {
-    res.status(401).json({ error: 'Token inválido' });
-  }
-};
+// authenticateMaster moved to top
 
 app.get('/api/me', authenticate, async (req: any, res) => {
   const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', req.user.id).single();
