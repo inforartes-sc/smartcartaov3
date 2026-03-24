@@ -51,7 +51,7 @@ const authenticateMaster = async (req: any, res: any, next: any) => {
 };
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 
 // Public settings (Publicly accessible)
@@ -243,7 +243,12 @@ app.post('/api/products', authenticate, async (req: any, res) => {
     color,
     optionals: Array.isArray(optionals) ? JSON.stringify(optionals) : (optionals || '[]'),
     show_consortium_plans: !!show_consortium_plans,
-    consortium_plans: Array.isArray(consortium_plans) ? JSON.stringify(consortium_plans) : (consortium_plans || '[]')
+    consortium_plans: Array.isArray(consortium_plans) ? JSON.stringify(consortium_plans) : (consortium_plans || '[]'),
+    show_financing_plans: !!req.body.show_financing_plans,
+    financing_plans: Array.isArray(req.body.financing_plans) ? JSON.stringify(req.body.financing_plans) : (req.body.financing_plans || '[]'),
+    cash_price: req.body.cash_price || null,
+    card_installments: req.body.card_installments || null,
+    card_interest: !!req.body.card_interest
   }).select('id').single();
   
   if (error) return res.status(400).json({ error: error.message });
@@ -274,7 +279,12 @@ app.put('/api/products/:id', authenticate, async (req: any, res) => {
     color,
     optionals: Array.isArray(optionals) ? JSON.stringify(optionals) : (optionals || '[]'),
     show_consortium_plans: !!show_consortium_plans,
-    consortium_plans: Array.isArray(consortium_plans) ? JSON.stringify(consortium_plans) : (consortium_plans || '[]')
+    consortium_plans: Array.isArray(consortium_plans) ? JSON.stringify(consortium_plans) : (consortium_plans || '[]'),
+    show_financing_plans: !!req.body.show_financing_plans,
+    financing_plans: Array.isArray(req.body.financing_plans) ? JSON.stringify(req.body.financing_plans) : (req.body.financing_plans || '[]'),
+    cash_price: req.body.cash_price || null,
+    card_installments: req.body.card_installments || null,
+    card_interest: !!req.body.card_interest
   }).eq('id', parseInt(req.params.id)).eq('user_id', req.user.id);
   
   if (error) return res.status(400).json({ error: error.message });
@@ -319,32 +329,62 @@ app.get('/api/admin/users', authenticateMaster, async (req, res) => {
 });
 
 app.get('/api/admin/stats', authenticateMaster, async (req, res) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   try {
+    // 1. Basic counts
     const userRes = await supabase.from('profiles').select('id, username, is_admin, plan_id, status, views', { count: 'exact' });
     const userProfiles = userRes.data || [];
     const userCount = userRes.count || userProfiles.length;
+    
+    // 2. Views
     const totalViews = userProfiles.reduce((acc, curr) => acc + (curr.views || 0), 0);
+
+    // 3. Admins vs Members (Special rule for 'admin' username)
     const adminsCount = userProfiles.filter(u => u.username === 'admin' || u.is_admin === true || u.is_admin === 'true').length;
     const membersCount = userProfiles.length - adminsCount;
+
+    // 4. Users per Plan
     const { data: plans } = await supabase.from('plans').select('*');
     const planStats = (plans || []).map(p => ({
       name: p.name,
       count: userProfiles.filter(u => u.plan_id && Number(u.plan_id) === Number(p.id)).length
     }));
+
+    // Add "Sem Plano" if there are users with null plan_id
     const noPlanCount = userProfiles.filter(u => !u.plan_id).length;
-    if (noPlanCount > 0) planStats.push({ name: 'Sem Plano', count: noPlanCount });
+    if (noPlanCount > 0) {
+      planStats.push({ name: 'Sem Plano', count: noPlanCount });
+    }
+
+    // 5. New users in last 30 days
     const { data: authUsers } = await supabase.auth.admin.listUsers();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const newUsersCount = (authUsers?.users || []).filter(u => new Date(u.created_at) > thirtyDaysAgo).length;
+    
+    const newUsersCount = (authUsers?.users || []).filter(u => {
+      const createdDate = new Date(u.created_at);
+      return createdDate > thirtyDaysAgo;
+    }).length;
+
+    // 6. Active vs Inactive
     const activeCount = userProfiles.filter(u => u.status === 'active').length;
     const inactiveCount = userProfiles.length - activeCount;
-      res.json({ userCount, totalViews, adminsCount, membersCount, planStats, newUsersCount, activeCount, inactiveCount });
-    } catch (err: any) {
-      console.error('[STATS] Error:', err);
-      res.status(400).json({ error: `Erro nas estatísticas: ${err.message}` });
-    }
+    
+    const results = { 
+      userCount: Number(userCount), 
+      totalViews: Number(totalViews),
+      adminsCount: Number(adminsCount),
+      membersCount: Number(membersCount),
+      planStats,
+      newUsersCount: Number(newUsersCount),
+      activeCount: Number(activeCount),
+      inactiveCount: Number(inactiveCount)
+    };
+
+    res.json(results);
+  } catch (err: any) {
+    console.error('[STATS] Error:', err);
+    res.status(400).json({ error: `Erro nas estatísticas: ${err.message}` });
+  }
 });
 
 app.delete('/api/admin/users/:id', authenticateMaster, async (req, res) => {
@@ -391,22 +431,36 @@ app.get('/api/admin/settings', authenticateMaster, async (req, res) => {
 app.put('/api/admin/settings', authenticateMaster, async (req, res) => {
   const { 
     default_logo, default_phone, footer_logo, favicon, footer_text, system_version,
+    landing_hero_title, landing_hero_subtitle, landing_hero_cta,
     landing_concept_title, landing_concept_subtitle, landing_features_title,
     landing_cta_title, landing_cta_subtitle, landing_cta_button,
     landing_example1, landing_example2, landing_example3, landing_example4,
     landing_concept_item1_t, landing_concept_item1_d,
     landing_concept_item2_t, landing_concept_item2_d,
-    landing_concept_item3_t, landing_concept_item3_d
+    landing_concept_item3_t, landing_concept_item3_d,
+    landing_mockup_hero, landing_mockup_service, landing_mockup_features,
+    landing_done_tag, landing_done_title_first, landing_done_title_last, landing_done_text,
+    landing_catalog_tag, landing_catalog_title_first, landing_catalog_title_last, landing_catalog_text,
+    landing_catalog_btn_text, landing_catalog_btn_link,
+    landing_stats_text, landing_stats_description,
+    landing_faqs
   } = req.body;
   
   const { error } = await supabase.from('system_settings').update({ 
     default_logo, default_phone, footer_logo, favicon, footer_text, system_version,
+    landing_hero_title, landing_hero_subtitle, landing_hero_cta,
     landing_concept_title, landing_concept_subtitle, landing_features_title,
     landing_cta_title, landing_cta_subtitle, landing_cta_button,
     landing_example1, landing_example2, landing_example3, landing_example4,
     landing_concept_item1_t, landing_concept_item1_d,
     landing_concept_item2_t, landing_concept_item2_d,
-    landing_concept_item3_t, landing_concept_item3_d
+    landing_concept_item3_t, landing_concept_item3_d,
+    landing_mockup_hero, landing_mockup_service, landing_mockup_features,
+    landing_done_tag, landing_done_title_first, landing_done_title_last, landing_done_text,
+    landing_catalog_tag, landing_catalog_title_first, landing_catalog_title_last, landing_catalog_text,
+    landing_catalog_btn_text, landing_catalog_btn_link,
+    landing_stats_text, landing_stats_description,
+    landing_faqs
   }).eq('id', 1);
   
   if (error) {
@@ -446,12 +500,28 @@ app.post('/api/admin/plans', authenticateMaster, async (req, res) => {
 
 app.put('/api/admin/plans/:id', authenticateMaster, async (req: any, res) => {
   const { name, months, price, description, features, billing_cycle, is_popular } = req.body;
-  const { error } = await supabase.from('plans').update({ 
-    name, months, price, description, features, billing_cycle,
-    is_popular: is_popular === true || is_popular === 1
-  }).eq('id', req.params.id);
-  if (error) return res.status(400).json({ error: error.message });
-  res.json({ success: true });
+  try {
+    // Use RPC to bypass potential schema cache issues (PGRST204)
+    const { error } = await supabase.rpc('update_plan_direct', {
+      p_id: parseInt(req.params.id),
+      p_name: name,
+      p_months: months,
+      p_price: price || '0,00',
+      p_description: description || '',
+      p_features: features || '',
+      p_billing_cycle: billing_cycle || 'monthly',
+      p_is_popular: is_popular === true || is_popular === 1
+    });
+
+    if (error) {
+      console.error('Plan Update RPC Error:', error);
+      return res.status(400).json({ error: error.message });
+    }
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('Plan Update Catch Error:', err);
+    res.status(500).json({ error: 'Erro interno ao atualizar plano' });
+  }
 });
 
 app.delete('/api/admin/plans/:id', authenticateMaster, async (req: any, res) => {
