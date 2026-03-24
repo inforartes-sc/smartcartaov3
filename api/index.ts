@@ -27,18 +27,26 @@ const authenticate = (req: any, res: any, next: any) => {
   }
 };
 
-const authenticateMaster = (req: any, res: any, next: any) => {
+const authenticateMaster = async (req: any, res: any, next: any) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).json({ error: 'Não autorizado' });
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
-    if (decoded.email !== 'master@smartcartao.com' && decoded.email !== 'adm@smartcartao.com' && decoded.email !== 'admin@smartcartao.com') {
-      return res.status(403).json({ error: `Acesso negado para ${decoded.email}` });
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', decoded.id).single();
+    
+    const isMaster = profile?.username === 'admin' || 
+                    (profile as any)?.is_admin === true;
+
+    if (!isMaster) {
+      console.log(`[AUTH] Access Denied for user ${decoded.id} (username: ${profile?.username}, is_admin: ${profile?.is_admin})`);
+      return res.status(403).json({ error: 'Acesso negado: você não tem permissão de Master Admin.' });
     }
+    
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(401).json({ error: 'Token inválido' });
+    console.error('[AUTH] Master verification failed:', err);
+    res.status(401).json({ error: 'Sessão inválida. Por favor, faça login novamente.' });
   }
 };
 
@@ -48,6 +56,7 @@ app.use(cookieParser());
 
 // Public settings (Publicly accessible)
 app.get('/api/settings', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   const { data, error } = await supabase.from('system_settings').select('*').eq('id', 1).single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
@@ -310,6 +319,7 @@ app.get('/api/admin/users', authenticateMaster, async (req, res) => {
 });
 
 app.get('/api/admin/stats', authenticateMaster, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   try {
     const userRes = await supabase.from('profiles').select('id, username, is_admin, plan_id, status, views', { count: 'exact' });
     const userProfiles = userRes.data || [];
@@ -330,10 +340,11 @@ app.get('/api/admin/stats', authenticateMaster, async (req, res) => {
     const newUsersCount = (authUsers?.users || []).filter(u => new Date(u.created_at) > thirtyDaysAgo).length;
     const activeCount = userProfiles.filter(u => u.status === 'active').length;
     const inactiveCount = userProfiles.length - activeCount;
-    res.json({ userCount, totalViews, adminsCount, membersCount, planStats, newUsersCount, activeCount, inactiveCount });
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
+      res.json({ userCount, totalViews, adminsCount, membersCount, planStats, newUsersCount, activeCount, inactiveCount });
+    } catch (err: any) {
+      console.error('[STATS] Error:', err);
+      res.status(400).json({ error: `Erro nas estatísticas: ${err.message}` });
+    }
 });
 
 app.delete('/api/admin/users/:id', authenticateMaster, async (req, res) => {
@@ -371,6 +382,7 @@ app.delete('/api/admin/testimonials/:id', authenticateMaster, async (req, res) =
 
 // Admin Settings
 app.get('/api/admin/settings', authenticateMaster, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   const { data: settings, error } = await supabase.from('system_settings').select('*').eq('id', 1).single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(settings);

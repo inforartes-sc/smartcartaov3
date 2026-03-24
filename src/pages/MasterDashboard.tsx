@@ -67,7 +67,8 @@ export default function MasterDashboard() {
           setGlobalSettings(prev => ({ ...prev, ...s }));
         }
       } else {
-        toast.error('Erro ao carregar dados do Master Admin');
+        const errorData = await statsRes.json().catch(() => ({}));
+        toast.error(errorData.error || 'Erro ao carregar dados do Master Admin');
       }
     } catch (err) {
       toast.error('Erro de conexão');

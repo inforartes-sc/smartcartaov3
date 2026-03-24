@@ -58,12 +58,16 @@ const authenticateMaster = async (req: any, res: any, next: any) => {
     const isMaster = profile?.username === 'admin' || 
                     (profile as any)?.is_admin === true;
 
-    if (!isMaster) return res.status(403).json({ error: 'Acesso negado' });
+    if (!isMaster) {
+      console.log(`[AUTH] Access Denied for user ${decoded.id} (username: ${profile?.username}, is_admin: ${profile?.is_admin})`);
+      return res.status(403).json({ error: 'Acesso negado: você não tem permissão de Master Admin.' });
+    }
+    
     req.user = decoded;
     next();
   } catch (err) {
-    console.error('Master Master Error:', err);
-    res.status(401).json({ error: 'Token inválido' });
+    console.error('[AUTH] Token verification failed:', err);
+    res.status(401).json({ error: 'Sessão inválida. Por favor, faça login novamente.' });
   }
 };
 
@@ -322,8 +326,8 @@ async function setupApp() {
 
       res.json(results);
     } catch (err: any) {
-      console.error('Stats Error:', err);
-      res.status(400).json({ error: err.message });
+      console.error('[STATS] Error:', err);
+      res.status(400).json({ error: `Erro nas estatísticas: ${err.message}` });
     }
   });
 
