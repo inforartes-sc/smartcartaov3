@@ -137,7 +137,7 @@ export default function UserDashboard() {
               { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
               { to: '/dashboard/perfil', icon: User, label: 'Meu Perfil' },
               { to: '/dashboard/produtos', icon: Package, label: 'Produtos' },
-              { to: `https://pagixypay.vercel.app/portal?email=${user?.email || ''}`, icon: Globe, label: 'Portal Financeiro', external: true },
+              { to: `https://pagixypay.vercel.app/login?email=${user?.email || ''}`, icon: Globe, label: 'Portal Financeiro', external: true },
               { to: '/dashboard/tema', icon: Palette, label: 'Tema' },
             ].map((item: any) => (
               item.external ? (
@@ -236,7 +236,7 @@ export default function UserDashboard() {
               </h3>
                <p className="text-[10px] opacity-80 mt-1 font-medium">Evite o bloqueio do seu cartão digital gerando sua fatura no portal.</p>
                <a 
-                 href={`https://pagixypay.vercel.app/portal?email=${user?.email || ''}`}
+                 href={`https://pagixypay.vercel.app/login?email=${user?.email || ''}`}
                  target="_blank"
                  className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-white text-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 transition-all shadow-sm"
                >

@@ -19,6 +19,14 @@ export default function Login() {
       .then(data => setSettings(data));
   }, []);
 
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailParam = urlParams.get('email');
+    if (emailParam) {
+      setUsername(emailParam);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -94,7 +102,8 @@ export default function Login() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
             <input
-              type="text"
+              id="email_input_id"
+              type="email"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
