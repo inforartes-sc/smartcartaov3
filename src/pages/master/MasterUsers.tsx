@@ -26,7 +26,9 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
     expiry_date: '',
     admin_message: '',
     establishment: '',
-    is_admin: false
+    is_admin: false,
+    documento: '',
+    email: ''
   });
   const [passForm, setPassForm] = useState('');
   const [updatingPass, setUpdatingPass] = useState(false);
@@ -40,7 +42,9 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
     plan_id: '',
     expiry_date: '',
     establishment: '',
-    is_admin: false
+    is_admin: false,
+    documento: '',
+    email: ''
   });
 
   useEffect(() => {
@@ -94,7 +98,7 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
       if (res.ok) {
         toast.success(`Usuário ${newUserData.username} criado com sucesso!`);
         setShowAddUser(false);
-        setNewUserData({ username: '', password: '', display_name: '', establishment: '', role_title: 'Consultor(a) Yamaha', slug: '', plan_id: '', expiry_date: '', is_admin: false });
+        setNewUserData({ username: '', password: '', display_name: '', establishment: '', role_title: 'Consultor(a) Yamaha', slug: '', plan_id: '', expiry_date: '', is_admin: false, documento: '', email: '' });
         fetchUsers();
       } else {
         const data = await res.json();
@@ -256,6 +260,16 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
               />
             </div>
             <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">CPF / CNPJ</label>
+              <input
+                type="text"
+                value={newUserData.documento}
+                onChange={(e) => setNewUserData({ ...newUserData, documento: e.target.value })}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                placeholder="CPF ou CNPJ"
+              />
+            </div>
+            <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">Identificação / Empresa</label>
               <input
                 type="text"
@@ -263,6 +277,17 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
                 onChange={(e) => setNewUserData({ ...newUserData, establishment: e.target.value })}
                 className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                 placeholder="Ex: Yamaha Motos"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">E-mail</label>
+              <input
+                type="email"
+                required
+                value={newUserData.email}
+                onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                placeholder="exemplo@email.com"
               />
             </div>
             <div className="space-y-1">
@@ -287,20 +312,31 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">Nível de Acesso</label>
+              <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">Plano de Acesso</label>
               <select
-                required
-                value={newUserData.is_admin ? 'true' : 'false'}
-                onChange={(e) => setNewUserData({ ...newUserData, is_admin: e.target.value === 'true' })}
+                required={!newUserData.is_admin}
+                value={newUserData.plan_id}
+                onChange={(e) => handlePlanChange(e.target.value, false)}
                 className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold"
               >
-                <option value="false">Consultor (Membro)</option>
-                <option value="true">Master Admin (Painel Master)</option>
+                <option value="">Selecione um plano...</option>
+                {plans.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.months} meses)</option>
+                ))}
               </select>
             </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">Vencimento Manual</label>
+              <input
+                type="date"
+                value={newUserData.expiry_date}
+                onChange={(e) => setNewUserData({ ...newUserData, expiry_date: e.target.value })}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+              />
+            </div>
             <div className="flex items-end">
-              <button type="submit" className="w-full bg-blue-600 text-white font-black py-2.5 rounded-xl hover:bg-blue-700 transition-all uppercase tracking-widest text-[9px] shadow-lg shadow-blue-100">
-                Criar Consultor
+              <button type="submit" className="w-full bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-700 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-blue-100">
+                Registrar e Integrar
               </button>
             </div>
           </form>
@@ -428,7 +464,9 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
                             expiry_date: u.expiry_date ? u.expiry_date.split('T')[0] : '',
                             admin_message: u.admin_message || '',
                             establishment: u.establishment || '',
-                            is_admin: u.is_admin === true
+                            is_admin: u.is_admin === true,
+                            documento: u.documento || u.cpf || '',
+                            email: u.email || ''
                           });
                         }}
                         className="p-1.5 bg-gray-50 text-gray-400 hover:bg-blue-600 hover:text-white rounded-lg transition-all"
@@ -516,12 +554,32 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
                       />
                     </div>
                     <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">E-mail do Consultor</label>
+                      <input
+                        type="email"
+                        placeholder="E-mail"
+                        value={editForm.email}
+                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                      />
+                    </div>
+                    <div className="space-y-1">
                       <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">Link do Cartão (Slug)</label>
                       <input
                         type="text"
                         placeholder="Identificador (slug)"
                         value={editForm.slug}
                         onChange={(e) => setEditForm({ ...editForm, slug: e.target.value })}
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">CPF / CNPJ do Consultor</label>
+                      <input
+                        type="text"
+                        placeholder="CPF ou CNPJ"
+                        value={editForm.documento}
+                        onChange={(e) => setEditForm({ ...editForm, documento: e.target.value })}
                         className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                       />
                     </div>

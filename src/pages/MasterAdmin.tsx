@@ -19,7 +19,9 @@ export default function MasterAdmin() {
     password: '',
     display_name: '',
     role_title: 'Consultor(a) Yamaha',
-    slug: ''
+    slug: '',
+    email: '',
+    documento: ''
   });
 
   const fetchData = async () => {
@@ -111,7 +113,7 @@ export default function MasterAdmin() {
       if (res.ok) {
         toast.success(`Usuário ${newUserData.username} criado com sucesso!`);
         setShowAddUser(false);
-        setNewUserData({ username: '', password: '', display_name: '', role_title: 'Consultor(a) Yamaha', slug: '' });
+        setNewUserData({ username: '', password: '', display_name: '', role_title: 'Consultor(a) Yamaha', slug: '', email: '', documento: '' });
         fetchData();
       } else {
         const data = await res.json();
@@ -323,6 +325,28 @@ export default function MasterAdmin() {
                 onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
                 className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="••••••••"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">E-mail</label>
+              <input
+                type="email"
+                required
+                value={newUserData.email}
+                onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="exemplo@email.com"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">CPF / CNPJ</label>
+              <input
+                type="text"
+                required
+                value={newUserData.documento}
+                onChange={(e) => setNewUserData({ ...newUserData, documento: e.target.value })}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="000.000.000-00"
               />
             </div>
             <div>

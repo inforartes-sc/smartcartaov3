@@ -76,6 +76,140 @@ app.get('/api/testimonials', async (req, res) => {
 
 
 
+// Financial & Billing Routes
+app.get('/api/admin/faturas', authenticateMaster, async (req, res) => {
+  const { data, error } = await supabase.from('faturas').select('*').order('created_at', { ascending: false });
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+app.post('/api/admin/faturas', authenticateMaster, async (req, res) => {
+  const { user_id, amount, due_date, payment_link } = req.body;
+  const { data, error } = await supabase.from('faturas').insert([{
+    user_id,
+    amount,
+    due_date,
+    payment_link,
+    status: 'pending'
+  }]).select().single();
+  
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+app.put('/api/admin/faturas/:id/status', authenticateMaster, async (req, res) => {
+  const { status } = req.body;
+  const { error } = await supabase.from('faturas').update({ status }).eq('id', req.params.id);
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ success: true });
+});
+
+app.get('/api/faturas', authenticate, async (req: any, res) => {
+  const { data, error } = await supabase.from('faturas').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+// Webhook for Payment Confirmation (to be called by external system)
+app.post('/api/webhooks/payments', async (req, res) => {
+  const { user_id, status, months, plan_id, plan_name, event, invoice } = req.body;
+  const apiKey = req.headers['x-api-key'];
+
+  console.log(`[WEBHOOK] Received event: ${event || status} from PagiXyPay`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[WEBHOOK-PAYLOAD]:', JSON.stringify(req.body, null, 2));
+  }
+
+  if (apiKey !== process.env.OTHER_SYSTEM_API_KEY) {
+    console.warn('[WEBHOOK] Unauthorized API Key attempt');
+    return res.status(401).json({ error: 'Unauthorized webhook call' });
+  }
+
+  // Handle PagixyPay new format
+  if (event) {
+    if (event === 'invoice.created' && invoice) {
+      // Try multiple fields for user identification
+      const final_user_id = invoice.smartcartao_user_id || invoice.external_reference || invoice.user_id;
+      
+      if (!final_user_id) {
+        console.warn('[WEBHOOK-PAGIXY] No user ID found in invoice payload');
+        return res.status(400).json({ error: 'User ID missing' });
+      }
+
+      console.log(`[WEBHOOK-PAGIXY] Creating invoice for user ${final_user_id}`);
+      const { error } = await supabase.from('faturas').insert([{
+        user_id: final_user_id,
+        amount: String(invoice.amount).replace('R$', '').trim(),
+        due_date: invoice.due_date,
+        payment_link: invoice.payment_link || invoice.url,
+        status: 'pending'
+      }]);
+      
+      if (error) {
+        console.error('[WEBHOOK] Fatura insert error:', error.message);
+        return res.status(500).json({ error: 'DB Error' });
+      }
+      return res.json({ success: true, message: 'Invoice recorded' });
+    }
+
+    if (event === 'payment.received') {
+      const final_user_id = invoice?.external_reference || invoice?.smartcartao_user_id || invoice?.user_id;
+      if (!final_user_id) return res.status(400).json({ error: 'User ID not found in payload' });
+
+      const { data: profile } = await supabase.from('profiles').select('expiry_date, plan_id').eq('id', final_user_id).single();
+      if (!profile) return res.json({ error: 'User not found in local database' });
+
+      let monthsToAdd = 1;
+      if (profile.plan_id) {
+          const { data: plan } = await supabase.from('plans').select('months').eq('id', profile.plan_id).single();
+          if (plan) monthsToAdd = plan.months || 1;
+      }
+
+      const baseDate = profile.expiry_date && new Date(profile.expiry_date) > new Date() 
+          ? new Date(profile.expiry_date) 
+          : new Date();
+      
+      const newDate = new Date(baseDate);
+      newDate.setMonth(newDate.getMonth() + monthsToAdd);
+      
+      await supabase.from('profiles').update({
+        status: 'active',
+        expiry_date: newDate.toISOString().split('T')[0]
+      }).eq('id', final_user_id);
+
+      // Update fatura status
+      await supabase.from('faturas').update({ status: 'paid' }).eq('user_id', final_user_id).eq('status', 'pending');
+
+      console.log(`[WEBHOOK] Payment confirmed for user ${final_user_id}. Access extended to ${newDate.toISOString().split('T')[0]}`);
+      return res.json({ success: true, message: 'Payment confirmed and access extended' });
+    }
+  }
+
+  // Legacy / Original webhook handling
+  if (status === 'paid' || status === 'active') {
+    const targetId = user_id || (invoice && (invoice.external_reference || invoice.smartcartao_user_id));
+    if (!targetId) return res.status(400).json({ error: 'Missing user_id' });
+
+    const { data: profile } = await supabase.from('profiles').select('expiry_date').eq('id', targetId).single();
+    
+    const newDate = new Date(profile?.expiry_date || new Date());
+    newDate.setMonth(newDate.getMonth() + (months || 0));
+    
+    const { error: updateError } = await supabase.from('profiles').update({
+      status: 'active',
+      plan_id: plan_id || null,
+      plan_type: plan_name || 'Premium',
+      expiry_date: newDate.toISOString().split('T')[0]
+    }).eq('id', targetId);
+
+    if (updateError) return res.status(400).json({ error: updateError.message });
+    console.log(`[WEBHOOK] Access released for user ${targetId} (+${months} months)`);
+    return res.json({ success: true, message: 'Access released' });
+  }
+
+  res.json({ success: true, message: 'Event ignored' });
+});
+
 // Auth Middlewares moved to top
 
 // API Routes
@@ -88,7 +222,7 @@ app.post('/api/auth/register', authenticateMaster, async (req, res) => {
     const default_phone = settings?.default_phone;
 
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: username.includes('@') ? username : `${username}@smartcartao.com`,
+      email: req.body.email || (username.includes('@') ? username : `${username}@smartcartao.com`),
       password: password,
       email_confirm: true
     });
@@ -96,12 +230,16 @@ app.post('/api/auth/register', authenticateMaster, async (req, res) => {
 
     // Handle Plan Expiry if plan_id provided
     let expiryDate = null;
+    let planName = 'Standard';
+    let planPriceValue = '49.00';
     if (req.body.plan_id) {
-      const { data: plan } = await supabase.from('plans').select('months').eq('id', req.body.plan_id).single();
+      const { data: plan } = await supabase.from('plans').select('*').eq('id', req.body.plan_id).single();
       if (plan) {
         const d = new Date();
         d.setMonth(d.getMonth() + plan.months);
         expiryDate = d.toISOString().split('T')[0];
+        planName = plan.name;
+        planPriceValue = plan.price ? plan.price.replace(',', '.') : '49.00';
       }
     }
 
@@ -115,11 +253,72 @@ app.post('/api/auth/register', authenticateMaster, async (req, res) => {
         slug,
         profile_image: default_logo,
         whatsapp: default_phone,
+        documento: req.body.documento || req.body.cpf || null,
+        email: req.body.email || authData.user.email,
         plan_id: req.body.plan_id || null,
         expiry_date: expiryDate,
         is_admin: req.body.is_admin === true
       });
     if (profileError) throw profileError;
+    
+    // INTEGRATION WITH EXTERNAL SYSTEM (PagixyPay API)
+    try {
+      const externalApiUrl = process.env.OTHER_SYSTEM_API_URL || 'https://pagixypay.vercel.app/api/clients';
+      const apiKey = process.env.OTHER_SYSTEM_API_KEY || 'sk_live_qpaoysy10eb';
+      
+      console.log(`[EXTERNAL-INTEGRATION] Registering user ${username} in PagixyPay...`);
+      
+      const extResponse = await fetch(externalApiUrl, {
+         method: 'POST',
+         headers: { 
+           'Content-Type': 'application/json',
+           'X-API-KEY': apiKey
+         },
+         body: JSON.stringify({
+            id: authData.user.id,
+            name: display_name,
+            email: req.body.email || authData.user.email,
+            document: req.body.documento || req.body.cpf || null,
+            password: password
+         })
+      }).catch((err) => {
+        console.error('[EXTERNAL-INTEGRATION] Network error:', err.message);
+        return null;
+      });
+
+      if (extResponse && extResponse.ok) {
+        const extData: any = await extResponse.json();
+        console.log('[EXTERNAL-INTEGRATION] Success Response:', extData);
+        
+        // PagixyPay /api/clients might not return a payment link immediately as per new docs.
+        // If it does (backwards compatible/future-proof), we use it.
+        const finalAmount = extData.invoice?.amount || extData.amount || planPriceValue;
+        const finalLink = extData.payment_link || extData.url || extData.invoice?.payment_link || null;
+        const finalDate = extData.due_date || extData.invoice?.due_date || new Date(Date.now() + 10*24*60*60*1000).toISOString();
+
+        await supabase.from('faturas').insert([{
+           user_id: authData.user.id,
+           amount: String(finalAmount || planPriceValue),
+           due_date: finalDate,
+           payment_link: finalLink,
+           status: 'pending'
+        }]);
+      } else {
+        const extErrorBody = extResponse ? await extResponse.text().catch(() => 'unknown') : 'connection-failed';
+        console.warn('[EXTERNAL-INTEGRATION] Failed. Status:', extResponse?.status, 'Body:', extErrorBody);
+        
+        // Create fatura locally as fallback
+        await supabase.from('faturas').insert([{
+           user_id: authData.user.id,
+           amount: planPriceValue,
+           due_date: new Date(Date.now() + 10*24*60*60*1000).toISOString(),
+           status: 'pending'
+        }]);
+      }
+    } catch (extErr) {
+      console.error('[EXTERNAL-INTEGRATION] Error:', extErr);
+    }
+    
     res.json({ id: authData.user.id });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -397,6 +596,8 @@ app.put('/api/admin/users/:id/update', authenticateMaster, async (req: any, res)
     display_name, establishment, role_title, slug, status, plan_type,
     plan_id: req.body.plan_id || null,
     expiry_date: expiry_date || null,
+    documento: req.body.documento || req.body.cpf || null,
+    email: req.body.email || null,
     admin_message,
     admin_message_date: new Date().toISOString(),
     is_admin: req.body.is_admin === true
@@ -485,6 +686,48 @@ app.get('/api/public/plans', async (req, res) => {
   const { data: plans, error } = await supabase.from('plans').select('*').order('id', { ascending: true });
   if (error) return res.status(400).json({ error: error.message });
   res.json(plans);
+});
+
+// Test External Integration
+app.post('/api/admin/test-integration', authenticateMaster, async (req, res) => {
+  try {
+    const externalApiUrl = process.env.OTHER_SYSTEM_API_URL || 'https://pagixypay.vercel.app/api/clients';
+    const apiKey = process.env.OTHER_SYSTEM_API_KEY || 'sk_live_qpaoysy10eb';
+    
+    const testEmail = `test-${Date.now()}@smartcartao.com`;
+    console.log(`[TEST-INTEGRATION] Testing connection to: ${externalApiUrl} using email: ${testEmail}`);
+    
+    const response = await fetch(externalApiUrl, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-API-KEY': apiKey
+      },
+      body: JSON.stringify({
+        id: 'test-connection-id',
+        name: 'Teste de Conexão',
+        email: testEmail,
+        document: '000.000.000-00',
+        password: 'test-password-123'
+      })
+    }).catch(err => {
+      return { ok: false, status: 500, statusText: err.message };
+    });
+
+    const responseText = response && typeof (response as any).text === 'function' 
+      ? await (response as any).text().catch(() => 'No body')
+      : 'Connection failed';
+
+    res.json({
+      ok: response?.ok || false,
+      status: response?.status || 500,
+      statusText: (response as any)?.statusText || 'Error',
+      body: responseText,
+      url: externalApiUrl
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/api/admin/plans', authenticateMaster, async (req, res) => {

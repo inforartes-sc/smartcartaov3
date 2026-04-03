@@ -16,8 +16,10 @@ CREATE TABLE profiles (
   admin_message_date TIMESTAMP WITH TIME ZONE,
   plan_type TEXT DEFAULT 'Standard',
   expiry_date DATE,
+  email TEXT,
   status TEXT DEFAULT 'active',
   establishment TEXT,
+  documento TEXT,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT (now()) NOT NULL
 );
 

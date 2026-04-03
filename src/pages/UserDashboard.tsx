@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate, Link, Routes, Route, useLocation } from 'react-router-dom';
-import { User, Package, LogOut, LayoutDashboard, ExternalLink, Palette, Copy, Share2, MousePointer2, Bell, Calendar, AlertTriangle, TrendingUp, Crown, CheckCircle, QrCode, Download, X } from 'lucide-react';
+import { User, Package, LogOut, LayoutDashboard, ExternalLink, Palette, Copy, Share2, MousePointer2, Bell, Calendar, AlertTriangle, TrendingUp, Crown, CheckCircle, QrCode, Download, X, CreditCard, Globe } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { QRCodeCanvas } from 'qrcode.react';
 import AdminProfile from './AdminProfile';
 import AdminProducts from './AdminProducts';
 import AdminTheme from './AdminTheme';
+import UserInvoices from './UserInvoices';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
@@ -136,19 +137,37 @@ export default function UserDashboard() {
               { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
               { to: '/dashboard/perfil', icon: User, label: 'Meu Perfil' },
               { to: '/dashboard/produtos', icon: Package, label: 'Produtos' },
+              { to: '/dashboard/faturas', icon: CreditCard, label: 'Faturas' },
+              { to: 'https://pagixypay.vercel.app', icon: Globe, label: 'Portal do Cliente', external: true },
               { to: '/dashboard/tema', icon: Palette, label: 'Tema' },
-            ].map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={() => setIsSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
-                  isActive(item.to) ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50/50 hover:text-blue-600'
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                {item.label}
-              </Link>
+            ].map((item: any) => (
+              item.external ? (
+                <a
+                  key={item.to}
+                  href={item.to}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between px-4 py-3 rounded-xl transition-all font-medium text-gray-700 hover:bg-blue-50/50 hover:text-blue-600"
+                >
+                  <div className="flex items-center gap-3">
+                    <item.icon className="w-5 h-5 text-blue-500" />
+                    {item.label}
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 opacity-40" />
+                </a>
+              ) : (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+                    isActive(item.to) ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50/50 hover:text-blue-600'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  {item.label}
+                </Link>
+              )
             ))}
           </nav>
 
@@ -367,6 +386,7 @@ export default function UserDashboard() {
           } />
           <Route path="/perfil" element={<AdminProfile user={user} onUpdate={setUser} />} />
           <Route path="/produtos" element={<AdminProducts />} />
+          <Route path="/faturas" element={<UserInvoices />} />
           <Route path="/tema" element={<AdminTheme user={user} onUpdate={setUser} />} />
         </Routes>
       </main>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Phone, Image as ImageIcon, Upload, Loader2, Save, Globe } from 'lucide-react';
+import { Settings, Phone, Image as ImageIcon, Upload, Loader2, Save, Globe, Rocket } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { uploadImage } from '../../lib/supabase';
 
@@ -284,6 +284,56 @@ export default function MasterSettings({ globalSettings, setGlobalSettings, hand
                 placeholder="Ex: V2.0.4"
             />
           </div>
+
+          <hr className="border-gray-50" />
+          
+          {/* Integration Test Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+                <Rocket className="w-3 h-3 text-violet-500" />
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                Integração com PagiXyPay / SaaSFinFlow
+                </label>
+            </div>
+            
+            <div className="p-4 bg-violet-50 border border-violet-100 rounded-2xl space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-xs font-black text-violet-900 uppercase tracking-tight">Teste de Conexão</h4>
+                  <p className="text-[10px] text-violet-600 font-medium">Verifique se o seu sistema de faturamento está recebendo dados corretamente.</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      toast.loading('Testando conexão...', { id: 'test-api' });
+                      const res = await fetch('/api/admin/test-integration', { method: 'POST' });
+                      const data = await res.json();
+                      toast.dismiss('test-api');
+                      
+                      if (data.ok) {
+                        toast.success('Conexão estabelecida com sucesso!');
+                      } else {
+                        toast.error(`Falha na conexão (Status ${data.status})`);
+                      }
+                      
+                      // Show detailed result in a specialized toast or alert
+                      console.log('[TEST-INTEGRATION] Result:', data);
+                      alert(`URL: ${data.url}\nStatus: ${data.status} ${data.statusText}\nResposta: ${typeof data.body === 'object' ? JSON.stringify(data.body) : data.body.substring(0, 500)}`);
+                    } catch (err) {
+                      toast.dismiss('test-api');
+                      toast.error('Erro ao tentar testar a conexão');
+                    }
+                  }}
+                  className="px-6 py-2.5 bg-violet-600 text-white rounded-xl text-[10px] font-black hover:bg-violet-700 transition-all shadow-md shadow-violet-200 uppercase tracking-widest flex items-center gap-2 shrink-0"
+                >
+                  <Rocket className="w-3.5 h-3.5" />
+                  Testar Conexão
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <hr className="border-gray-50" />
 
           <div className="flex justify-start pt-4">
             <button
