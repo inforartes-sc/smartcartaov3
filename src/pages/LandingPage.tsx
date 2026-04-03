@@ -1085,6 +1085,16 @@ export default function LandingPage() {
                        <p className="text-xs font-black uppercase tracking-tight text-slate-800">Ambiente Seguro</p>
                     </div>
                  </div>
+
+                 <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+                       <img src="https://vdbdxfdjkycppdpbexri.supabase.co/storage/v1/object/public/logos/company-logos/ab4841d3-bcce-4621-b2c8-bcb4630f6619-0.4108661170281831.png" alt="PagixyPay" className="h-7 w-auto object-contain" />
+                    </div>
+                    <div>
+                       <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Plataforma Financeira</p>
+                       <p className="text-xs font-black uppercase tracking-tight text-slate-800">PagixyPay</p>
+                    </div>
+                 </div>
                </div>
             </div>
           </div>
@@ -1092,6 +1102,8 @@ export default function LandingPage() {
           <div className="mt-16 pt-8 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6">
              <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed text-center md:text-left max-w-xl">
                 {settings?.footer_text || 'Copyright © Smart Cartão - Todos os direitos reservados.'}
+                <br />
+                <span className="opacity-60">Este sistema utiliza a plataforma de pagamento <span className="text-blue-600">PagixyPay</span> como meio oficial.</span>
              </p>
              <div className="flex items-center gap-3 bg-white px-4 py-2 border border-slate-200 rounded-full shadow-sm">
                 <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
