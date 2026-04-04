@@ -259,7 +259,6 @@ export default function Onboarding() {
                       <Lock className="w-3.5 h-3.5 text-blue-500" /> Sugestão de Senha
                     </label>
                     <input 
-                      required
                       type="password" 
                       placeholder="Sua senha inicial"
                       value={formData.suggested_password}
@@ -275,7 +274,6 @@ export default function Onboarding() {
                       <Layout className="w-3.5 h-3.5 text-blue-500" /> Nome da Empresa
                     </label>
                     <input 
-                      required
                       type="text" 
                       placeholder={isRealEstate ? "Ex: Imobiliária Prática" : "Ex: Top Veículos"}
                       value={formData.business_name}
@@ -288,7 +286,6 @@ export default function Onboarding() {
                       <Briefcase className="w-3.5 h-3.5 text-blue-500" /> Seu Cargo / Função
                     </label>
                     <input 
-                      required
                       type="text" 
                       placeholder="Consultor, Diretor, etc."
                       value={formData.role_title}
