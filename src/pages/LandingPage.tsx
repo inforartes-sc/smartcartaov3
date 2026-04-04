@@ -53,7 +53,7 @@ export default function LandingPage() {
   useEffect(() => {
     Promise.all([
       fetch('/api/public/settings?t=' + Date.now()).then(res => res.json()).catch(() => ({})),
-      fetch('/api/plans-data?t=' + Date.now()).then(res => res.json()).catch(() => []),
+      fetch('/api/public/plans?t=' + Date.now()).then(res => res.json()).catch(() => []),
       fetch('/api/testimonials?t=' + Date.now()).then(res => res.json()).catch(() => [])
     ]).then(([settingsData, plansData, testimonialsData]) => {
       setSettings(settingsData);

@@ -134,6 +134,12 @@ app.get('/api/admin/plans', authenticateMaster, async (req, res) => {
   res.json(data || []);
 });
 
+app.get('/api/public/plans', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  const { data: plans, error } = await supabase.from('plans').select('*').order('id', { ascending: true });
+  res.json(plans || []);
+});
+
 app.put('/api/admin/plans/:id', authenticateMaster, async (req, res) => {
   const { name, months, price, description, features, billing_cycle, is_popular, discount } = req.body;
   const { error } = await supabase.rpc('update_plan_direct', { 
