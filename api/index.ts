@@ -140,6 +140,11 @@ app.get('/api/public/plans', async (req, res) => {
   res.json(plans || []);
 });
 
+app.get('/api/testimonials', async (req, res) => {
+  const { data: testimonials, error } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
+  res.json(testimonials || []);
+});
+
 app.put('/api/admin/plans/:id', authenticateMaster, async (req, res) => {
   const { name, months, price, description, features, billing_cycle, is_popular, discount } = req.body;
   const { error } = await supabase.rpc('update_plan_direct', { 
