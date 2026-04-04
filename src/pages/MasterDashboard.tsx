@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, Routes, Route, useLocation } from 'react-router-dom';
-import { LogOut, LayoutDashboard, ShieldAlert, Users, Settings, Rocket, Globe, Menu, X, DollarSign } from 'lucide-react';
+import { LogOut, LayoutDashboard, ShieldAlert, Users, Settings, Rocket, Globe, Menu, X, DollarSign, Layout } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { SYSTEM_VERSION } from '../config';
@@ -10,6 +10,7 @@ import MasterSettings from './master/MasterSettings';
 import MasterPlans from './master/MasterPlans';
 import MasterLanding from './master/MasterLanding';
 import MasterFinanceiro from './master/MasterFinanceiro';
+import MasterOnboarding from './master/MasterOnboarding';
 import toast from 'react-hot-toast';
 
 export default function MasterDashboard() {
@@ -181,6 +182,7 @@ export default function MasterDashboard() {
               { to: '/admin/plans', icon: Rocket, label: 'Planos' },
               { to: '/admin/financeiro', icon: DollarSign, label: 'Financeiro' },
               { to: '/admin/landing', icon: Globe, label: 'Página Inicial' },
+              { to: '/admin/onboarding', icon: Layout, label: 'Onboarding' },
               { to: '/admin/settings', icon: Settings, label: 'Configurações' },
             ].map((item) => (
               <Link
@@ -232,6 +234,7 @@ export default function MasterDashboard() {
                 <Route path="/plans" element={<MasterPlans />} />
                 <Route path="/financeiro" element={<MasterFinanceiro />} />
                 <Route path="/landing" element={<MasterLanding />} />
+                <Route path="/onboarding" element={<MasterOnboarding />} />
                 <Route path="/settings" element={<MasterSettings globalSettings={globalSettings} setGlobalSettings={setGlobalSettings} handleSaveSettings={handleSaveSettings} savingSettings={savingSettings} />} />
             </Routes>
         )}

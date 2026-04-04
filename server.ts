@@ -184,6 +184,66 @@ async function setupApp() {
     res.json(data);
   });
 
+  // Onboarding Routes
+  app.get('/api/admin/onboarding', authenticateMaster, async (req, res) => {
+    const { data, error } = await supabase.from('onboarding_submissions').select('*').order('created_at', { ascending: false });
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+  });
+
+  app.post('/api/public/onboarding', async (req, res) => {
+    const { 
+      client_name, 
+      client_email, 
+      client_whatsapp, 
+      niche, 
+      setup_type, 
+      product_estimated_count, 
+      business_name, 
+      business_location, 
+      additional_notes,
+      client_document,
+      role_title,
+      suggested_username,
+      client_logo_url,
+      suggested_password
+    } = req.body;
+
+    const { data, error } = await supabase.from('onboarding_submissions').insert([{
+      client_name,
+      client_email,
+      client_whatsapp,
+      niche,
+      setup_type,
+      product_estimated_count,
+      business_name,
+      business_location,
+      additional_notes,
+      client_document,
+      role_title,
+      suggested_username,
+      client_logo_url,
+      suggested_password,
+      status: 'pending'
+    }]).select().single();
+    
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+  });
+
+  app.put('/api/admin/onboarding/:id/status', authenticateMaster, async (req, res) => {
+    const { status } = req.body;
+    const { error } = await supabase.from('onboarding_submissions').update({ status }).eq('id', req.params.id);
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ success: true });
+  });
+
+  app.delete('/api/admin/onboarding/:id', authenticateMaster, async (req, res) => {
+    const { error } = await supabase.from('onboarding_submissions').delete().eq('id', req.params.id);
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ success: true });
+  });
+
   // Webhook for Payment Confirmation (to be called by external system)
   app.post('/api/webhooks/payments', async (req, res) => {
     const { user_id, status, months, plan_id, plan_name, event, invoice, client } = req.body;
@@ -296,7 +356,7 @@ async function setupApp() {
 
   // API Routes
   app.post('/api/auth/register', authenticateMaster, async (req, res) => {
-    const { username, password, display_name, role_title, slug, plan_id } = req.body;
+    const { username, password, display_name, role_title, slug, plan_id, profile_image } = req.body;
     try {
       // Fetch system settings for defaults
       const { data: settings } = await supabase.from('system_settings').select('*').eq('id', 1).single();
@@ -333,7 +393,7 @@ async function setupApp() {
           display_name, 
           role_title, 
           slug,
-          profile_image: default_logo,
+          profile_image: profile_image || default_logo,
           whatsapp: default_phone,
           documento: req.body.documento || req.body.cpf || null,
           email: req.body.email || authData.user.email,
@@ -852,8 +912,8 @@ async function setupApp() {
     res.json(products);
   });
 
-  app.post('/api/products', authenticate, async (req: any, res) => {
-    const { name, image, description, colors, images, consortium_image, liberacred_image, has_liberacred, has_consortium, is_highlighted, is_new, year, price, mileage, brand, condition, fuel, transmission, color, optionals, show_consortium_plans, consortium_plans } = req.body;
+  app.post('/api/products', authenticate, async (req: any, res: any) => {
+    const { name, image, description, colors, images, consortium_image, liberacred_image, has_liberacred, has_consortium, is_highlighted, is_new, year, price, mileage, brand, condition, fuel, transmission, color, optionals, show_consortium_plans, consortium_plans, video_url } = req.body;
     const { data, error } = await supabase
       .from('products')
       .insert({
@@ -898,7 +958,8 @@ async function setupApp() {
         is_for_rent: req.body.is_for_rent !== undefined ? !!req.body.is_for_rent : false,
         condo_fee: req.body.condo_fee || null,
         iptu: req.body.iptu || null,
-        map_url: req.body.map_url || null
+        map_url: req.body.map_url || null,
+        video_url: video_url || null
       })
       .select('id')
       .single();
@@ -918,7 +979,7 @@ async function setupApp() {
       'cash_price', 'card_installments', 'card_interest', 'is_active',
       'niche', 'property_type', 'bedrooms', 'bathrooms', 'suites', 
       'parking_spaces', 'area', 'location', 'is_for_sale', 'is_for_rent', 
-      'condo_fee', 'iptu', 'map_url'
+      'condo_fee', 'iptu', 'map_url', 'video_url'
     ];
 
     fields.forEach(field => {

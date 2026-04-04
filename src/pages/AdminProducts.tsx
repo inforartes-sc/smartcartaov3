@@ -87,7 +87,8 @@ export default function AdminProducts() {
     is_for_rent: false,
     condo_fee: '',
     iptu: '',
-    map_url: ''
+    map_url: '',
+    video_url: ''
   });
 
   const [newPlan, setNewPlan] = useState({ installments: 0, value: '' });
@@ -227,7 +228,8 @@ export default function AdminProducts() {
       is_for_rent: !!product.is_for_rent,
       condo_fee: product.condo_fee || '',
       iptu: product.iptu || '',
-      map_url: product.map_url || ''
+      map_url: product.map_url || '',
+      video_url: product.video_url || ''
     });
     setShowAddForm(true);
   };
@@ -274,7 +276,8 @@ export default function AdminProducts() {
       is_for_rent: !!product.is_for_rent,
       condo_fee: product.condo_fee || '',
       iptu: product.iptu || '',
-      map_url: product.map_url || ''
+      map_url: product.map_url || '',
+      video_url: product.video_url || ''
     });
     setShowAddForm(true);
   };
@@ -321,7 +324,8 @@ export default function AdminProducts() {
       is_for_rent: false,
       condo_fee: '',
       iptu: '',
-      map_url: ''
+      map_url: '',
+      video_url: ''
     });
     setNewPlan({ installments: 0, value: '' });
     setNewFinancingPlan({ down_payment: '', installments: 0, value: '' });
@@ -1099,6 +1103,18 @@ export default function AdminProducts() {
                   placeholder={userNiche === 'realestate' ? "Fale sobre a infraestrutura, pontos de interesse próximos, acabamento..." : "Fale sobre cilindrada, potência, tecnologias..."}
                 />
               </div>
+              
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Vídeo de Apresentação (Link)</label>
+                <input
+                  type="url"
+                  value={formState.video_url}
+                  onChange={(e) => setFormState({ ...formState, video_url: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
+                  placeholder="https://youtube.com/watch?v=... ou link direto .mp4"
+                />
+                <p className="text-[10px] text-gray-400 mt-2 italic px-2">Cole aqui o link do YouTube, Vimeo ou link direto do vídeo.</p>
+              </div>
 
               {userNiche !== 'realestate' && (
                 <div>
@@ -1221,6 +1237,7 @@ export default function AdminProducts() {
                   <p className="text-xs lg:text-sm text-gray-400 font-bold uppercase tracking-widest mt-0.5">{product.brand || 'Sem Marca'}</p>
                   <div className="flex flex-wrap gap-1.5 mt-2.5">
                     {product.has_liberacred && <span className="text-[9px] font-black bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-lg uppercase tracking-wider">Liberacred</span>}
+                    {product.video_url && <span className="text-[9px] font-black bg-red-100 text-red-700 px-2.5 py-1 rounded-lg uppercase tracking-wider">Vídeo</span>}
                     {product.is_highlighted && <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg uppercase tracking-wider">Destaque</span>}
                   </div>
                 </div>

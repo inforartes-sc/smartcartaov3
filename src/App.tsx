@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import UserDashboard from './pages/UserDashboard';
 import MasterDashboard from './pages/MasterDashboard';
 import LandingPage from './pages/LandingPage';
+import Onboarding from './pages/Onboarding';
 
 export default function App() {
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/admin/*" element={<MasterDashboard />} />
         <Route path="/:slug" element={<Home />} />
         <Route path="/:slug/catalogo" element={<Catalog />} />
+        <Route path="/onboarding" element={<Onboarding />} />
       </Routes>
     </Router>
   );

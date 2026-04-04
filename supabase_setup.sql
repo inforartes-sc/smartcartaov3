@@ -77,6 +77,7 @@ CREATE TABLE products (
   is_for_rent BOOLEAN DEFAULT FALSE,
   condo_fee NUMERIC,
   iptu NUMERIC,
+  video_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT (now()) NOT NULL
 );
 

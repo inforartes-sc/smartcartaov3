@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Shield, Trash2, ShieldAlert, ExternalLink, Plus, Pencil, Bell, Key, X, Send, CheckCircle, Calendar, Users, Rocket, Activity, Globe, CheckCircle2, ShieldX } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Search, UserPlus, Shield, Trash2, ShieldAlert, ExternalLink, Plus, Pencil, Bell, Key, X, Send, CheckCircle, Calendar, Users, Rocket, Activity, Globe, CheckCircle2, ShieldX, Eye, EyeOff, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Props {
@@ -8,8 +9,11 @@ interface Props {
 }
 
 export default function MasterUsers({ users, fetchUsers }: Props) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddUser, setShowAddUser] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; username: string } | null>(null);
   
@@ -46,8 +50,33 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
     is_admin: false,
     documento: '',
     email: '',
-    niche: 'vehicle'
+    niche: 'vehicle',
+    profile_image: ''
   });
+
+  // Auto-preenchimento vindo do Onboarding
+  useEffect(() => {
+    if (location.state?.onboardingData) {
+      const data = location.state.onboardingData;
+      setNewUserData(prev => ({
+        ...prev,
+        username: data.username || '',
+        display_name: data.display_name || '',
+        slug: data.slug || '',
+        documento: data.documento || '',
+        establishment: data.establishment || '',
+        email: data.email || '',
+        role_title: data.role_title || (data.niche === 'realestate' ? 'Corretor(a) de Imóveis' : 'Consultor(a) Yamaha'),
+        niche: data.niche || 'vehicle',
+        profile_image: data.profile_image || '',
+        password: data.password || ''
+      }));
+      setShowAddUser(true);
+      
+      // Limpar o state do roteador para permitir o fechamento do formulário
+      navigate('.', { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -100,7 +129,7 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
       if (res.ok) {
         toast.success(`Usuário ${newUserData.username} criado com sucesso!`);
         setShowAddUser(false);
-        setNewUserData({ username: '', password: '', display_name: '', establishment: '', role_title: 'Consultor(a) Yamaha', slug: '', plan_id: '', expiry_date: '', is_admin: false, documento: '', email: '', niche: 'vehicle' });
+        setNewUserData({ username: '', password: '', display_name: '', establishment: '', role_title: 'Consultor(a) Yamaha', slug: '', plan_id: '', expiry_date: '', is_admin: false, documento: '', email: '', niche: 'vehicle', profile_image: '' });
         fetchUsers();
       } else {
         const data = await res.json();
@@ -220,13 +249,29 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
 
       {showAddUser && (
         <div className="bg-white p-6 rounded-2xl border border-blue-100 shadow-sm animate-in slide-in-from-top-4 duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <Plus className="w-4 h-4 text-blue-600" />
-              Cadastrar Novo Usuário
-            </h2>
-            <button onClick={() => setShowAddUser(false)} className="text-gray-400 hover:text-gray-600 text-[10px] font-bold uppercase">Fechar</button>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+               {newUserData.profile_image ? (
+                 <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0 shadow-lg shadow-blue-50 ring-2 ring-blue-500/20">
+                    <img src={newUserData.profile_image} alt="Logo Cliente" className="w-full h-full object-contain p-1" />
+                 </div>
+               ) : (
+                 <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                    <ImageIcon className="w-6 h-6" />
+                 </div>
+               )}
+               <div>
+                  <h2 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                    Cadastrar Novo Usuário
+                  </h2>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                    {newUserData.profile_image ? 'Logotipo Capturado (Onboarding)' : 'Logotipo Padrão Ativo'}
+                  </p>
+               </div>
+            </div>
+            <button onClick={() => setShowAddUser(false)} className="text-gray-400 hover:text-gray-600 text-[10px] font-black uppercase tracking-widest bg-gray-50 px-3 py-1.5 rounded-lg transition-all active:scale-95">Fechar</button>
           </div>
+
           <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">Nome</label>
@@ -235,7 +280,7 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
                 required
                 value={newUserData.display_name}
                 onChange={(e) => setNewUserData({ ...newUserData, display_name: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                 placeholder="Ex: Rose Farias"
               />
             </div>
@@ -246,7 +291,7 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
                 required
                 value={newUserData.username}
                 onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                 placeholder="Ex: rose.farias"
               />
             </div>
@@ -257,7 +302,7 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
                 required
                 value={newUserData.slug}
                 onChange={(e) => setNewUserData({ ...newUserData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                 placeholder="rose-farias"
               />
             </div>
@@ -294,14 +339,23 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
             </div>
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">Senha</label>
-              <input
-                type="password"
-                required
-                value={newUserData.password}
-                onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={newUserData.password}
+                  onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                  placeholder="••••••••"
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest pl-1">Cargo</label>
@@ -310,7 +364,7 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
                 required
                 value={newUserData.role_title}
                 onChange={(e) => setNewUserData({ ...newUserData, role_title: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
               />
             </div>
             <div className="space-y-1">
@@ -333,7 +387,7 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
                 type="date"
                 value={newUserData.expiry_date}
                 onChange={(e) => setNewUserData({ ...newUserData, expiry_date: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium font-bold"
               />
             </div>
             <div className="space-y-1">
@@ -345,14 +399,14 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
                   const defaultRole = newNiche === 'realestate' ? 'Corretor(a) de Imóveis' : 'Consultor(a) Yamaha';
                   setNewUserData({ ...newUserData, niche: newNiche, role_title: defaultRole } as any);
                 }}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold text-blue-600"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-black text-blue-600"
               >
                 <option value="vehicle">Revenda de Veículos</option>
                 <option value="realestate">Mercado Imobiliário</option>
               </select>
             </div>
             <div className="flex items-end">
-              <button type="submit" className="w-full bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-700 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-blue-100">
+              <button type="submit" className="w-full bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-700 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-blue-100 active:scale-95">
                 Registrar e Integrar
               </button>
             </div>

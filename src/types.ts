@@ -43,6 +43,7 @@ export interface Product {
   condo_fee?: string | number;
   iptu?: string | number;
   map_url?: string;
+  video_url?: string;
 }
 
 export interface FinancingFormData {

@@ -44,7 +44,7 @@ export default function ProductCard({
   onCloseModal,
   allProducts
 }: ProductCardProps) {
-  const [activeModal, setActiveModal] = useState<'about' | 'consortium' | 'financing' | 'liberacred' | null>(null);
+  const [activeModal, setActiveModal] = useState<'about' | 'consortium' | 'financing' | 'liberacred' | 'video' | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
   const [selectedFinancingIndex, setSelectedFinancingIndex] = useState<number | null>(null);
@@ -168,6 +168,15 @@ export default function ProductCard({
               className="w-full py-2 px-4 bg-[#f9a825] hover:bg-[#f57f17] text-white rounded-md transition-colors text-xs font-bold uppercase"
             >
               Liberacred
+            </button>
+          )}
+
+          {product.video_url && (
+            <button
+              onClick={() => setActiveModal('video')}
+              className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors text-xs font-bold uppercase"
+            >
+              Vídeo de Apresentação
             </button>
           )}
           
@@ -587,6 +596,35 @@ export default function ProductCard({
           <p className="text-gray-600">
             O Liberacred é a facilidade que você precisava para conquistar sua Yamaha. Consulte condições especiais.
           </p>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={activeModal === 'video'}
+        onClose={handleModalClose}
+        title="Vídeo de Apresentação"
+      >
+        <div className="w-full aspect-video rounded-xl overflow-hidden bg-black">
+          {product.video_url?.includes('youtube.com') || product.video_url?.includes('youtu.be') ? (
+            <iframe 
+              src={`https://www.youtube.com/embed/${product.video_url.includes('v=') ? product.video_url.split('v=')[1].split('&')[0] : product.video_url.split('/').pop()}`}
+              className="w-full h-full"
+              allowFullScreen
+            />
+          ) : product.video_url?.includes('vimeo.com') ? (
+            <iframe 
+              src={`https://player.vimeo.com/video/${product.video_url.split('/').pop()}`}
+              className="w-full h-full"
+              allowFullScreen
+            />
+          ) : (
+            <video 
+              src={product.video_url} 
+              controls 
+              className="w-full h-full"
+              autoPlay
+            />
+          )}
         </div>
       </Modal>
     </motion.div>
