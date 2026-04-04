@@ -107,8 +107,16 @@ app.get('/api/admin/stats', authenticateMaster, async (req, res) => {
 
 // Settings & Plans
 app.get('/api/settings', async (req, res) => {
-  const { data } = await supabase.from('system_settings').select('*').eq('id', 1).single();
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  const { data, error } = await supabase.from('system_settings').select('*').eq('id', 1).single();
+  if (error) return res.status(400).json({ error: error.message });
   res.json(data);
+});
+
+app.get('/api/public/settings', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  const { data } = await supabase.from('system_settings').select('*').eq('id', 1).single();
+  res.json(data || {});
 });
 
 app.get('/api/admin/settings', authenticateMaster, async (req, res) => {
