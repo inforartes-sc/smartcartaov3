@@ -145,6 +145,13 @@ app.get('/api/testimonials', async (req, res) => {
   res.json(testimonials || []);
 });
 
+app.post('/api/admin/testimonials', authenticateMaster, async (req, res) => {
+  const { name, role, content, rating } = req.body;
+  const { data, error } = await supabase.from('testimonials').insert([{ name, role, content, rating: parseInt(rating) || 5 }]).select();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data[0]);
+});
+
 app.put('/api/admin/plans/:id', authenticateMaster, async (req, res) => {
   const { name, months, price, description, features, billing_cycle, is_popular, discount } = req.body;
   const { error } = await supabase.rpc('update_plan_direct', { 
