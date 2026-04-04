@@ -150,7 +150,7 @@ export default function ProductCard({
         
         <div className="w-full h-1.5 mb-6 transition-colors rounded-full" style={{ backgroundColor: themeColor }} />
 
-        <h3 className="text-sm font-bold text-gray-900 mb-2 uppercase tracking-tight line-clamp-1">{product.name}</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-2 uppercase tracking-tight line-clamp-2 leading-tight h-10 flex items-center justify-center">{product.name}</h3>
         
         {/* Real Estate Technical Icons */}
         {isRealEstate && (
