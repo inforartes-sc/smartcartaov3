@@ -152,6 +152,12 @@ app.post('/api/admin/testimonials', authenticateMaster, async (req, res) => {
   res.json(data[0]);
 });
 
+app.delete('/api/admin/testimonials/:id', authenticateMaster, async (req, res) => {
+  const { error } = await supabase.from('testimonials').delete().eq('id', req.params.id);
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ success: true });
+});
+
 app.put('/api/admin/plans/:id', authenticateMaster, async (req, res) => {
   const { name, months, price, description, features, billing_cycle, is_popular, discount } = req.body;
   const { error } = await supabase.rpc('update_plan_direct', { 
