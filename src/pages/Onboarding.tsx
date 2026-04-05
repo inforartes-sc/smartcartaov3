@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
+  Car, 
   Layout, 
   User, 
   MapPin, 
@@ -170,11 +171,11 @@ export default function Onboarding() {
                 exit={{ opacity: 0, x: -20 }}
                 className="text-center"
               >
-                <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-10">
+                <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-10 text-blue-600">
                   {isRealEstate ? (
-                    <Home className="w-12 h-12 text-blue-600" />
+                    <Home className="w-12 h-12" />
                   ) : (
-                    <Layout className="w-12 h-12 text-blue-600" />
+                    <Car className="w-12 h-12" />
                   )}
                 </div>
                 <button 
