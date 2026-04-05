@@ -349,7 +349,8 @@ export default function Catalog() {
                         financing_plans: typeof product.financing_plans === 'string' ? JSON.parse(product.financing_plans) : (product.financing_plans || []),
                         cash_price: product.cash_price,
                         card_installments: product.card_installments,
-                        card_interest: !!product.card_interest
+                        card_interest: !!product.card_interest,
+                        property_status: product.property_status
                       }} 
                       whatsappNumber={user.whatsapp}
                       primaryColor={user.primary_color}
@@ -394,7 +395,8 @@ export default function Catalog() {
                           financing_plans: typeof product.financing_plans === 'string' ? JSON.parse(product.financing_plans) : (product.financing_plans || []),
                           cash_price: product.cash_price,
                           card_installments: product.card_installments,
-                          card_interest: !!product.card_interest
+                          card_interest: !!product.card_interest,
+                          property_status: product.property_status
                         }} 
                         whatsappNumber={user.whatsapp}
                         primaryColor={user.primary_color}

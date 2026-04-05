@@ -913,7 +913,7 @@ async function setupApp() {
   });
 
   app.post('/api/products', authenticate, async (req: any, res: any) => {
-    const { name, image, description, colors, images, consortium_image, liberacred_image, has_liberacred, has_consortium, is_highlighted, is_new, year, price, mileage, brand, condition, fuel, transmission, color, optionals, show_consortium_plans, consortium_plans, video_url } = req.body;
+    const { name, image, description, colors, images, consortium_image, liberacred_image, has_liberacred, has_consortium, is_highlighted, is_new, year, price, mileage, brand, condition, fuel, transmission, color, optionals, show_consortium_plans, consortium_plans, video_url, property_status } = req.body;
     const { data, error } = await supabase
       .from('products')
       .insert({
@@ -959,7 +959,8 @@ async function setupApp() {
         condo_fee: req.body.condo_fee || null,
         iptu: req.body.iptu || null,
         map_url: req.body.map_url || null,
-        video_url: video_url || null
+        video_url: video_url || null,
+        property_status: property_status || 'ready'
       })
       .select('id')
       .single();
@@ -979,7 +980,7 @@ async function setupApp() {
       'cash_price', 'card_installments', 'card_interest', 'is_active',
       'niche', 'property_type', 'bedrooms', 'bathrooms', 'suites', 
       'parking_spaces', 'area', 'location', 'is_for_sale', 'is_for_rent', 
-      'condo_fee', 'iptu', 'map_url', 'video_url'
+      'condo_fee', 'iptu', 'map_url', 'video_url', 'property_status'
     ];
 
     fields.forEach(field => {

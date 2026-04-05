@@ -49,7 +49,7 @@ export default function ProductCard({
   const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
   const [selectedFinancingIndex, setSelectedFinancingIndex] = useState<number | null>(null);
 
-  const isRealEstate = product.niche === 'realestate';
+  const isRealEstate = product.niche === 'realestate' || !!product.property_status;
 
   const themeColor = primaryColor || '#003da5';
   const allImages = [product.image, ...(product.images || [])];
@@ -132,8 +132,8 @@ export default function ProductCard({
             referrerPolicy="no-referrer"
           />
           
-          {/* Status Tag for Real Estate */}
-          {isRealEstate && product.property_status && (
+          {/* Status Tag for Real Estate - Always show if status is available */}
+          {product.property_status && (
             <div className="absolute top-3 left-3 z-10">
               <span className={`px-3 py-1 font-black text-[9px] uppercase tracking-wider rounded-lg shadow-lg border backdrop-blur-md ${
                 product.property_status === 'ready' 
@@ -154,7 +154,7 @@ export default function ProductCard({
         
         {/* Real Estate Technical Icons */}
         {isRealEstate && (
-          <div className="flex items-center justify-between w-full mb-6 border-y border-gray-100/50 py-2">
+          <div className="flex items-center justify-between w-full mb-4 border-y border-gray-100/50 py-2">
             {product.area && (
               <div className="flex flex-col items-center gap-0.5 flex-1">
                 <Maximize className="w-3.5 h-3.5 text-red-600" />
@@ -179,6 +179,15 @@ export default function ProductCard({
                 <span className="text-[10px] font-black text-red-700 uppercase">{product.parking_spaces}</span>
               </div>
             )}
+          </div>
+        )}
+
+        {isRealEstate && product.location && (
+          <div className="w-full mb-6 px-1">
+            <div className="flex items-center justify-center gap-1.5 py-2.5 bg-gray-50/50 rounded-xl border border-gray-100 group transition-all hover:bg-gray-100 hover:border-gray-200">
+              <MapPin className="w-3.5 h-3.5 text-gray-900" />
+              <span className="text-[10px] font-black text-gray-900 uppercase truncate px-1">{product.location}</span>
+            </div>
           </div>
         )}
 
@@ -301,6 +310,12 @@ export default function ProductCard({
                     <div>
                       <p className="text-[10px] text-gray-400 font-bold uppercase">Tipo</p>
                       <p className="text-sm font-bold text-gray-800">{product.property_type}</p>
+                    </div>
+                  )}
+                  {product.property_status && (
+                    <div>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase">Status</p>
+                      <p className="text-sm font-bold text-gray-800">{product.property_status === 'ready' ? 'Pronto' : product.property_status === 'building' ? 'Em Construção' : 'Lançamento'}</p>
                     </div>
                   )}
                   {product.price && (

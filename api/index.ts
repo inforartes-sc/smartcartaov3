@@ -267,7 +267,8 @@ app.post('/api/products', authenticate, async (req: any, res: any) => {
     transmission, color, optionals, show_consortium_plans, 
     consortium_plans, video_url, niche, property_type, bedrooms, 
     bathrooms, suites, parking_spaces, area, location, 
-    is_for_sale, is_for_rent, condo_fee, iptu, map_url, show_financing_plans, financing_plans, cash_price, card_installments, card_interest, is_active
+    is_for_sale, is_for_rent, condo_fee, iptu, map_url, show_financing_plans, financing_plans, cash_price, card_installments, card_interest, is_active,
+    property_status
   } = req.body;
 
   const { data, error } = await supabase
@@ -315,7 +316,8 @@ app.post('/api/products', authenticate, async (req: any, res: any) => {
       condo_fee: condo_fee || null,
       iptu: iptu || null,
       map_url: map_url || null,
-      video_url: video_url || null
+      video_url: video_url || null,
+      property_status: property_status || 'ready'
     })
     .select('id')
     .single();
@@ -335,7 +337,7 @@ app.put('/api/products/:id', authenticate, async (req: any, res) => {
     'cash_price', 'card_installments', 'card_interest', 'is_active',
     'niche', 'property_type', 'bedrooms', 'bathrooms', 'suites', 
     'parking_spaces', 'area', 'location', 'is_for_sale', 'is_for_rent', 
-    'condo_fee', 'iptu', 'map_url', 'video_url'
+    'condo_fee', 'iptu', 'map_url', 'video_url', 'property_status'
   ];
 
   fields.forEach(field => {
