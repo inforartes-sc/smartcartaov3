@@ -1663,14 +1663,17 @@ const cleanNumeric = (val: any) => {
       try {
         const potentialFile = path.resolve(process.cwd(), 'index.html');
         const potentialDist = path.resolve(process.cwd(), 'dist/templ.html');
+        const isVercel = !!process.env.VERCEL;
         
+        console.log(`🛠️ [DEBUG] Env: ${process.env.NODE_ENV}, Vercel: ${isVercel}`);
+        console.log(`📂 [DEBUG] Checking: ${potentialDist}`);
+
         if (fs.existsSync(potentialDist)) {
           html = fs.readFileSync(potentialDist, 'utf-8');
         } else if (fs.existsSync(potentialFile)) {
           html = fs.readFileSync(potentialFile, 'utf-8');
         } else {
-          // Absolute last resort
-           console.log("⚠️ Using internal fallback HTML");
+           console.log("⚠️ Using internal fallback HTML (PRODUCTION MODE)");
            html = `<!DOCTYPE html><html><head><title>Smart Cartão</title></head><body><div id="root"></div><script type="module" src="/assets/index.js"></script></body></html>`;
         }
       } catch (e) {
