@@ -11,25 +11,31 @@
       "config": { "distDir": "dist" }
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "server.ts"
+      "src": "/api/(.*)",
+      "dest": "server.ts"
     },
     {
-      "source": "/((?!assets/|public/|uploads/).*)",
-      "destination": "server.ts",
+      "src": "/uploads/(.*)",
+      "dest": "/uploads/$1"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/((?!assets/|public/|uploads/).*)",
       "has": [
         {
           "type": "header",
           "key": "user-agent",
           "value": ".*(WhatsApp|Telegram|facebookexternalhit|Twitterbot|Slackbot).*"
         }
-      ]
+      ],
+      "dest": "server.ts"
     },
-    {
-      "handle": "filesystem"
-    },
+    { "handle": "filesystem" },
     {
       "src": "/(.*)",
       "dest": "/templ.html"
