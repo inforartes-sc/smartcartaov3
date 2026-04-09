@@ -515,17 +515,14 @@ async function setupApp() {
       }
 
       const token = jwt.sign({ id: data.user.id, email: data.user.email }, JWT_SECRET, { expiresIn: '7d' });
-      const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+      const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL || !!process.env.VERCEL_URL;
       const cookieOptions: any = {
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        path: '/'
+        path: '/',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax'
       };
-
-      if (isProduction) {
-        cookieOptions.secure = true;
-        cookieOptions.sameSite = 'none';
-      }
 
       res.cookie('token', token, cookieOptions);
       console.log(`✅ [DEBUG-COOKIE] Cookie 'token' Enviado para o usuário ${username}. Opções: ${JSON.stringify(cookieOptions)}`);
