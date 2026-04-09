@@ -1692,11 +1692,16 @@ const cleanNumeric = (val: any) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{title}}</title>
+    <meta name="description" content="{{description}}" />
     <meta property="og:title" content="{{title}}" />
     <meta property="og:description" content="{{description}}" />
     <meta property="og:image" content="{{image}}" />
+    <meta property="og:image:secure_url" content="{{image}}" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="image_src" href="{{image}}" />
 </head>
 <body>
     <div id="root"></div>
