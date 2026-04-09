@@ -1688,7 +1688,8 @@ const cleanNumeric = (val: any) => {
         }
       }
       
-      html = html.replaceAll('{{title}}', title)
+      html = html.replace(/<title>.*<\/title>/, `<title>${title}</title>`)
+                 .replaceAll('{{title}}', title)
                  .replaceAll('{{description}}', description)
                  .replaceAll('{{image}}', image);
       
