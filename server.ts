@@ -1685,8 +1685,24 @@ const cleanNumeric = (val: any) => {
         } else if (fs.existsSync(potentialFile)) {
           html = fs.readFileSync(potentialFile, 'utf-8');
         } else {
-           console.log("⚠️ Using internal fallback HTML (PRODUCTION MODE)");
-           html = `<!DOCTYPE html><html><head><title>Smart Cartão</title></head><body><div id="root"></div><script type="module" src="/assets/index.js"></script></body></html>`;
+           console.log("⚠️ Using internal fallback HTML with OG Tags");
+           html = `<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <meta property="og:title" content="{{title}}" />
+    <meta property="og:description" content="{{description}}" />
+    <meta property="og:image" content="{{image}}" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/assets/index.js"></script>
+</body>
+</html>`;
         }
       } catch (e) {
         html = `<!DOCTYPE html><html><head><title>Smart Cartão</title></head><body><div id="root"></div></body></html>`;
