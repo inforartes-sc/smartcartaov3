@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import os from 'os';
 
 dotenv.config();
 
@@ -17,13 +18,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE) {
-  console.error('Supabase configuration missing in environment variables!');
-}
-
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
+
 
 // View Cooldown Cache
 const viewCache: Record<string, number> = {};
@@ -49,14 +47,43 @@ app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 
 // Auth Middleware
-const authenticate = (req: any, res: any, next: any) => {
+const authenticate = async (req: any, res: any, next: any) => {
   const token = req.cookies.token;
-  if (!token) return res.status(401).json({ error: 'Não autorizado' });
+  
+  // DEBUG LOGS
+  if (req.path === '/api/me') {
+    console.log(`\n--- [DEBUG-COOKIE] Pedido para ${req.path} ---`);
+    console.log(`Headers Cookie: ${req.headers.cookie || '[VAZIO]'}`);
+    console.log(`Parsed Cookies: ${JSON.stringify(req.cookies)}`);
+  }
+
+  if (!token) {
+    if (req.path === '/api/me') console.log('❌ Token não encontrado nos cookies');
+    return res.status(401).json({ error: 'Não autorizado' });
+  }
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    
+    // FETCH PROFILE
+    const { data: profile, error: dbError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', decoded.id)
+      .single();
+
+    if (dbError || !profile) {
+      console.log(`❌ [AUTH-ERROR] Perfil não encontrado para ID ${decoded.id}: ${dbError?.message || 'vazio'}`);
+      return res.status(401).json({ error: 'Perfil não encontrado' });
+    }
+
+    req.user = { 
+      ...profile,
+      id: profile.id,
+      is_admin: profile.is_admin || profile.username === 'admin' 
+    };
     next();
-  } catch (err) {
+  } catch (err: any) {
+    console.log(`❌ [AUTH-ERROR] Falha no JWT: ${err.message}`);
     res.status(401).json({ error: 'Token inválido' });
   }
 };
@@ -488,38 +515,77 @@ async function setupApp() {
       }
 
       const token = jwt.sign({ id: data.user.id, email: data.user.email }, JWT_SECRET, { expiresIn: '7d' });
-      res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none' });
-      res.json({ user: { id: data.user.id, username, slug: profile?.slug, is_admin: profile?.is_admin || username === 'admin' } });
+      const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+      const cookieOptions: any = {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/'
+      };
+
+      if (isProduction) {
+        cookieOptions.secure = true;
+        cookieOptions.sameSite = 'none';
+      }
+
+      res.cookie('token', token, cookieOptions);
+      console.log(`✅ [DEBUG-COOKIE] Cookie 'token' Enviado para o usuário ${username}. Opções: ${JSON.stringify(cookieOptions)}`);
+      res.json({ 
+        user: { 
+          ...profile,
+          id: data.user.id, 
+          username, 
+          is_admin: profile?.is_admin || username === 'admin' 
+        } 
+      });
     } catch (err: any) {
       res.status(401).json({ error: 'Credenciais inválidas' });
     }
   });
 
   app.post('/api/auth/logout', (req, res) => {
-    res.clearCookie('token');
+    const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+    const cookieOptions: any = {
+      httpOnly: true,
+      path: '/'
+    };
+    if (isProduction) {
+      cookieOptions.secure = true;
+      cookieOptions.sameSite = 'none';
+    }
+    res.clearCookie('token', cookieOptions);
     res.json({ success: true });
   });
 
   app.get('/api/me', authenticate, async (req: any, res) => {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', req.user.id).single();
-    if (error) return res.status(404).json({ error: 'Perfil não encontrado' });
+    // Prevent browser from caching auth status
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    // REUSE CACHED USER DATA FROM MIDDLEWARE
+    const profile = req.user;
     
     if (profile?.status === 'blocked') {
         res.clearCookie('token');
         return res.status(403).json({ error: 'Conta Bloqueada' });
     }
 
-    // Expiry Check on Load
+    // Expiry Check (Already performed in middleware? No, let's keep for security)
     if (profile?.expiry_date && new Date(profile.expiry_date) < new Date()) {
         await supabase.from('profiles').update({ status: 'blocked' }).eq('id', profile.id);
         res.clearCookie('token');
         return res.status(403).json({ error: 'Conta Expirada' });
     }
 
+    // Consultants count only specifically on /me
+    const { count } = await supabase
+      .from('team_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('parent_id', profile.id);
+    
     res.json({
       ...profile,
-      is_admin: profile.is_admin || profile.username === 'admin'
+      consultants_count: count || 0
     });
   });
 
@@ -825,11 +891,17 @@ async function setupApp() {
   });
 
   app.post('/api/admin/plans', authenticateMaster, async (req, res) => {
-    const { name, months, price, description, features, billing_cycle, is_popular } = req.body;
+    const { name, months, price, description, features, billing_cycle, is_popular, quota, agencies } = req.body;
     const { data, error } = await supabase.from('plans').insert({ 
-      name, months, price: price || '0,00', description: description || '',
-      features: features || '', billing_cycle: billing_cycle || 'monthly',
-      is_popular: is_popular === true || is_popular === 1
+      name, 
+      months, 
+      price: price || '0,00', 
+      description: description || '',
+      features: features || '', 
+      billing_cycle: billing_cycle || 'monthly',
+      is_popular: is_popular === true || is_popular === 1,
+      quota: quota || '',
+      agencies: agencies || ''
     }).select().single();
     if (error) {
       console.error('Plan Creation Error:', error);
@@ -839,81 +911,522 @@ async function setupApp() {
   });
 
   app.put('/api/admin/plans/:id', authenticateMaster, async (req, res) => {
-    const { name, months, price, description, features, billing_cycle, is_popular } = req.body;
+    const { name, months, price, description, features, billing_cycle, is_popular, quota, agencies } = req.body;
+    console.log(`[DEBUG] Updating Plan ID: ${req.params.id}`, req.body);
+    
     try {
-      // Use RPC to bypass potential schema cache issues (PGRST204)
-      const { error } = await supabase.rpc('update_plan_direct', {
-        p_id: parseInt(req.params.id),
-        p_name: name,
-        p_months: months,
-        p_price: price || '0,00',
-        p_description: description || '',
-        p_features: features || '',
-        p_billing_cycle: billing_cycle || 'monthly',
-        p_is_popular: is_popular === true || is_popular === 1
-      });
+      const { data, error } = await supabase
+        .from('plans')
+        .update({
+          name,
+          months: parseInt(String(months || 1)),
+          price: price || '0,00',
+          description: description || '',
+          features: features || '',
+          billing_cycle: billing_cycle || 'monthly',
+          is_popular: is_popular === true || is_popular === 1,
+          quota: quota || '',
+          agencies: agencies || ''
+        })
+        .eq('id', parseInt(req.params.id))
+        .select();
 
       if (error) {
-        console.error('Plan Update RPC Error:', error);
+        console.error('[DEBUG] Plan Update Error:', error);
         return res.status(400).json({ error: error.message });
       }
-      res.json({ success: true });
+      
+      console.log(`[DEBUG] Plan ${req.params.id} updated successfully:`, data?.[0]);
+      res.json({ success: true, plan: data?.[0] });
     } catch (err: any) {
       console.error('Plan Update Catch Error:', err);
       res.status(500).json({ error: 'Erro interno ao atualizar plano' });
     }
   });
 
-  // Public Profile Route
-  app.get('/api/profile/:slug', async (req, res) => {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('slug', req.params.slug)
-      .single();
+// PUBLIC PROFILE CACHE (Slug -> Data)
+// To prevent slamming the DB on every catalog load
+const publicCache: Record<string, { data: any, timestamp: number }> = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-    if (profileError || !profile) return res.status(404).json({ error: 'Perfil não encontrado' });
-    
-    // Increment views with cooldown
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const cacheKey = `${ip}-${profile.id}`;
-    const now = Date.now();
+// Helper to clear profile cache globally or for a specific slug
+const clearPublicCache = (slug?: string) => {
+  if (slug) {
+    console.log(`[CACHE] Clearing cache for slug: ${slug}`);
+    delete publicCache[slug];
+  } else {
+    console.log('[CACHE] Clearing entire public cache');
+    Object.keys(publicCache).forEach(key => delete publicCache[key]);
+  }
+};
 
-    if (!viewCache[cacheKey] || now - viewCache[cacheKey] > VIEW_COOLDOWN) {
-      await supabase.from('profiles').update({ views: (profile.views || 0) + 1 }).eq('id', profile.id);
-      viewCache[cacheKey] = now;
-      
-      // Cleanup cache occasionally
-      if (Object.keys(viewCache).length > 1000) {
-        Object.keys(viewCache).forEach(key => {
-          if (now - viewCache[key] > VIEW_COOLDOWN) delete viewCache[key];
-        });
-      }
+// Public Profile Route
+app.get('/api/profile/:slug', async (req, res) => {
+  const { slug } = req.params;
+  const now = Date.now();
+
+  // 1. Check Cache First
+  if (publicCache[slug] && now - publicCache[slug].timestamp < CACHE_TTL) {
+    return res.json(publicCache[slug].data);
+  }
+
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  
+  try {
+    // 2. Fetch Profile or Team Member in Parallel
+    const [profileRes, memberRes] = await Promise.all([
+      supabase.from('profiles').select('*').eq('slug', slug).single(),
+      supabase.from('team_members').select('*').eq('slug', slug).single()
+    ]);
+
+    let finalProfile = profileRes.data;
+    let isTeamMember = false;
+
+    if (!finalProfile && memberRes.data) {
+      const member = memberRes.data;
+      // Fetch Hierarchy Info in Parallel
+      const [parentRes, rootRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', member.parent_id).single(),
+        supabase.from('profiles').select('*').eq('id', member.root_id).single()
+      ]);
+
+      const parent = parentRes.data;
+      const root = rootRes.data;
+      const brandingSource = parent || root;
+
+      finalProfile = {
+        ...member, 
+        display_name: member.name,
+        profile_image: member.photo_url,
+        // Inherit branding from DIRECT PARENT or ROOT
+        primary_color: brandingSource?.primary_color,
+        background_color: brandingSource?.background_color,
+        social_links: brandingSource?.social_links,
+        marquee_text: brandingSource?.marquee_text,
+        show_marquee: brandingSource?.show_marquee,
+        marquee_speed: brandingSource?.marquee_speed,
+        establishment: brandingSource?.establishment,
+        card_bottom_image: brandingSource?.card_bottom_image,
+        card_background_image: brandingSource?.card_background_image,
+        profile_banner_image: brandingSource?.profile_banner_image,
+        show_catalog_banner: brandingSource?.show_catalog_banner,
+        show_profile_banner: brandingSource?.show_profile_banner,
+        niche: brandingSource?.niche,
+        footer_text: brandingSource?.footer_text
+      };
+      isTeamMember = true;
     }
 
-    const { data: products } = await supabase
-      .from('products')
-      .select('*')
-      .eq('user_id', profile.id);
+    if (!finalProfile) return res.status(404).json({ error: 'Perfil não encontrado' });
 
-    const activeProducts = (products || []).filter(p => p.is_active !== false);
-    res.json({ user: profile, products: activeProducts });
+    // 3. Views Management (Non-blocking)
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const viewKey = `view-${ip}-${slug}`;
+    if (!viewCache[viewKey] || now - viewCache[viewKey] > VIEW_COOLDOWN) {
+      if (!isTeamMember) {
+        supabase.from('profiles').update({ views: (finalProfile.views || 0) + 1 }).eq('id', finalProfile.id).then();
+      }
+      viewCache[viewKey] = now;
+    }
+
+    // 4. Load Products & Settings in Parallel
+    const catalogOwnerId = finalProfile.root_id || finalProfile.id;
+    const branchToFilterId = finalProfile.root_id ? (finalProfile.parent_id || finalProfile.id) : null;
+    const allowedOwners = [...new Set([catalogOwnerId, branchToFilterId, finalProfile.id])].filter(Boolean);
+
+    const [productsRes, settingsRes] = await Promise.all([
+      supabase.from('products').select('*').in('user_id', allowedOwners),
+      branchToFilterId ? supabase.from('branch_product_settings').select('*').eq('branch_id', branchToFilterId) : Promise.resolve({ data: [] })
+    ]);
+
+    const activeProducts = (productsRes.data || []).map(p => {
+       // MASTER KILL SWITCH: If product is inactive at matrix origin, hide everywhere
+       if (p.is_active === false) return null;
+
+       // CRITICAL: Filter matrix products for any non-matrix view (Branch or Consultant)
+       const isViewingOwnCatalog = String(p.user_id) === String(finalProfile.id);
+       const isSharedProduct = p.show_on_branches !== false;
+
+       if (!isViewingOwnCatalog && !isSharedProduct) {
+          return null; // Don't show matrix-exclusive products on branch/consultant catalogs
+       }
+
+       if (p.user_id === catalogOwnerId) {
+         const setting = settingsRes.data?.find(s => s.product_id === p.id);
+         if (setting) {
+           return { 
+             ...p, 
+             is_active: setting.is_active !== false, 
+             price: setting.price_override || p.price,
+             is_highlighted: setting.is_highlighted === true
+           };
+         }
+       }
+       return p;
+    }).filter(p => p !== null && p.is_active !== false);
+
+    const responsePayload = { user: finalProfile, products: activeProducts };
+
+    // 5. Store in Cache and Return
+    publicCache[slug] = { data: responsePayload, timestamp: now };
+    res.json(responsePayload);
+
+  } catch (err: any) {
+    console.error('[PUBLIC-CATALOG-ERROR]', err);
+    res.status(500).json({ error: 'Erro ao carregar catálogo' });
+  }
+});
+
+  // Consultants Management
+  app.get('/api/consultants', authenticate, async (req: any, res) => {
+    const { data, error } = await supabase
+      .from('team_members')
+      .select('*')
+      .eq('parent_id', req.user.id)
+      .order('name');
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
   });
+
+  app.post('/api/consultants', authenticate, async (req: any, res) => {
+    const { name, display_name, whatsapp, photo_url, role_title, slug } = req.body;
+    try {
+      console.log(`[CONSULTANT] Creating team member: ${name} for parent: ${req.user.id}`);
+      
+      // 1. Check if slug exists anywhere (profiles or team_members)
+      const { data: pExisting } = await supabase.from('profiles').select('id').eq('slug', slug).single();
+      const { data: mExisting } = await supabase.from('team_members').select('id').eq('slug', slug).single();
+      
+      if (pExisting || mExisting) {
+        return res.status(400).json({ error: 'Este link (slug) já está em uso.' });
+      }
+
+      // 2. Insert into team_members (NO AUTH REQUIRED)
+      const { data: parentProfile } = await supabase.from('profiles').select('root_id, user_limit').eq('id', req.user.id).single();
+      const actualRootId = parentProfile?.root_id || req.user.id;
+      const limit = parentProfile?.user_limit || 5;
+
+      // 3. CHECK USER LIMIT FOR THIS ACCOUNT
+      const { count: currentCount } = await supabase
+        .from('team_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('parent_id', req.user.id);
+
+      if ((currentCount || 0) >= limit) {
+         return res.status(400).json({ error: `Você atingiu seu limite de ${limit} cartões. Entre em contato com a matriz para solicitar mais vagas.` });
+      }
+
+      const { data, error: insertError } = await supabase
+        .from('team_members')
+        .insert({
+          name: display_name || name,
+          slug: slug.toLowerCase(),
+          whatsapp,
+          photo_url: photo_url || req.body.profile_image,
+          role_title: role_title || 'Consultor de Vendas',
+          parent_id: req.user.id,
+          root_id: actualRootId, 
+          is_active: true
+        })
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('[CONSULTANT-INSERT-ERROR]', insertError);
+        return res.status(400).json({ error: 'Erro ao cadastrar consultor.' });
+      }
+
+      res.json({ success: true, member: data });
+    } catch (err: any) {
+      console.error('[CONSULTANT-CATCH-ERROR]', err);
+      res.status(500).json({ error: 'Erro interno no servidor.' });
+    }
+  });
+
+  app.put('/api/consultants/:id', authenticate, async (req: any, res) => {
+    const { display_name, whatsapp, photo_url, role_title, slug } = req.body;
+    try {
+      // 1. Check slug uniqueness (if it changed)
+      const { data: current } = await supabase.from('team_members').select('slug').eq('id', req.params.id).single();
+      if (current?.slug !== slug) {
+        const { data: pExisting } = await supabase.from('profiles').select('id').eq('slug', slug).single();
+        const { data: mExisting } = await supabase.from('team_members').select('id').eq('slug', slug).single();
+        if (pExisting || mExisting) {
+          return res.status(400).json({ error: 'Este link (slug) já está em uso.' });
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('team_members')
+        .update({
+          name: display_name,
+          slug: slug.toLowerCase(),
+          whatsapp,
+          photo_url,
+          role_title,
+          updated_at: new Date()
+        })
+        .eq('id', req.params.id)
+        .eq('parent_id', req.user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      res.json({ success: true, member: data });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/consultants/:id', authenticate, async (req: any, res) => {
+    const { error } = await supabase
+      .from('team_members')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('parent_id', req.user.id);
+      
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ success: true });
+  });
+
+  // Agencies Management (Level 2: Branches)
+  app.get('/api/agencies', authenticate, async (req: any, res) => {
+    try {
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('root_id', req.user.id)
+        .order('display_name');
+      
+      if (profileError) throw profileError;
+
+      // Fetch emails from auth.users (since it's a small list)
+      const { data: authData } = await supabase.auth.admin.listUsers();
+      const userList = authData?.users || [];
+      
+      const agenciesWithEmail = (profiles || []).map(p => {
+        const authUser = userList.find(u => u.id === p.id);
+        return { ...p, email: authUser?.email };
+      });
+      
+      res.json(agenciesWithEmail);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/agencies', authenticate, async (req: any, res) => {
+    const { email, password, display_name, slug, whatsapp, user_limit } = req.body;
+    try {
+      console.log(`[AGENCY] Attempting to create branch: ${display_name} (${email}) with limit: ${user_limit || 5}`);
+      
+      // 1. Pre-validation: Check if email or slug exists
+      const { data: existingProfile } = await supabase.from('profiles')
+        .select('id')
+        .or(`username.eq.${slug},slug.eq.${slug}`)
+        .single();
+      
+      if (existingProfile) {
+        return res.status(400).json({ error: 'Este link (slug) já está em uso.' });
+      }
+
+      // Check if email already has an auth account
+      const { data: emailData } = await supabase.auth.admin.listUsers();
+      if (emailData?.users.find(u => u.email === email)) {
+        return res.status(400).json({ error: 'Este e-mail já está cadastrado no sistema.' });
+      }
+
+      // 2. Create Auth User
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true
+      });
+      
+      if (authError) {
+        console.error('[AGENCY-AUTH-ERROR]', authError);
+        return res.status(400).json({ error: authError.message });
+      }
+
+      // 3. Create Profile linked to Matriz
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          username: slug.toLowerCase(),
+          display_name,
+          slug: slug.toLowerCase(),
+          whatsapp,
+          root_id: req.user.id, 
+          status: 'active',
+          user_limit: parseInt(String(user_limit)) || 5
+        });
+      
+      if (profileError) {
+         console.error('[AGENCY-PROFILE-ERROR]', profileError);
+         await supabase.auth.admin.deleteUser(authData.user.id);
+         return res.status(400).json({ error: 'Erro ao criar perfil da agência.' });
+      }
+
+      console.log(`[AGENCY] Branch created successfully: ${authData.user.id}`);
+      res.json({ success: true, id: authData.user.id });
+    } catch (err: any) {
+      console.error('[AGENCY-CATCH-ERROR]', err);
+      res.status(500).json({ error: 'Erro interno no servidor ao criar agência.' });
+    }
+  });
+
+  app.put('/api/agencies/:id', authenticate, async (req: any, res) => {
+    const { display_name, slug, whatsapp, profile_image, password, user_limit } = req.body;
+    try {
+      // 1. Check slug uniqueness
+      const { data: current } = await supabase.from('profiles').select('slug').eq('id', req.params.id).single();
+      if (current?.slug !== slug) {
+        const { data: existing } = await supabase.from('profiles').select('id').eq('slug', slug).single();
+        if (existing) return res.status(400).json({ error: 'Este link (slug) já está em uso.' });
+      }
+
+      // 2. Update Password if provided
+      if (password && password.trim().length > 0) {
+        const { error: authError } = await supabase.auth.admin.updateUserById(req.params.id, { password });
+        if (authError) throw authError;
+      }
+
+      // 3. Update Profile
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          display_name,
+          slug: slug.toLowerCase(),
+          whatsapp,
+          profile_image,
+          username: slug.toLowerCase(),
+          user_limit: user_limit ? parseInt(String(user_limit)) : undefined,
+          updated_at: new Date()
+        })
+        .eq('id', req.params.id)
+        .eq('root_id', req.user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      res.json({ success: true, member: data });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/agencies/:id', authenticate, async (req: any, res) => {
+    try {
+      const { error } = await supabase.auth.admin.deleteUser(req.params.id);
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+// Helper to clean numeric strings (mask -> number)
+const cleanNumeric = (val: any) => {
+  if (!val || typeof val !== 'string') return val;
+  const cleaned = val.replace(/\./g, '').replace(',', '.').replace(/[^\d.]/g, '');
+  return isNaN(parseFloat(cleaned)) ? null : parseFloat(cleaned);
+};
 
   // Product Routes
   app.get('/api/products', authenticate, async (req: any, res) => {
-    const { data: products, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('user_id', req.user.id);
+    try {
+      const isBranch = !!req.user.root_id;
+      const matrixId = req.user.root_id;
+      const localId = req.user.id;
+      
+      console.log(`[PRODUCTS-FETCH-DEBUG] User: ${localId}, isBranch: ${isBranch}, matrixId: ${matrixId}`);
+      
+      // 1. Fetch Inherited Matrix Products
+      let matrixProducts: any[] = [];
+      if (isBranch && matrixId) {
+        const { data } = await supabase
+          .from('products')
+          .select('*')
+          .eq('user_id', matrixId)
+          .eq('show_on_branches', true)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+        matrixProducts = data || [];
+      }
+
+      // 2. Fetch Local/Own Products
+      const { data: ownProducts } = await supabase
+        .from('products')
+        .select('*')
+        .eq('user_id', localId)
+        .order('created_at', { ascending: false });
+      
+      const localProducts = ownProducts || [];
+
+      // 3. Fetch Branch Settings (Overrides/Toggles)
+      let branchSettings: any[] = [];
+      if (isBranch) {
+        const { data } = await supabase
+          .from('branch_product_settings')
+          .select('*')
+          .eq('branch_id', localId);
+        branchSettings = data || [];
+      }
+
+      // 4. Combine & Apply Overrides
+      const combined = [...localProducts.map(p => ({ ...p, is_inherited: false })), 
+                        ...matrixProducts.map(p => {
+                          const setting = branchSettings.find(s => s.product_id === p.id);
+                          return { 
+                            ...p, 
+                            is_inherited: true, 
+                            is_active: setting ? setting.is_active : true,
+                            price: setting?.price_override || p.price,
+                            is_highlighted: setting ? (setting.is_highlighted === true) : (p.is_highlighted === true)
+                          };
+                        })];
+
+      console.log(`[PRODUCTS-FETCH] User ${localId} fetched ${combined.length} products`);
+      if (combined.length > 0) {
+        console.log(`[PRODUCTS-FETCH-DEBUG] is_highlighted type: ${typeof combined[0].is_highlighted}, value: ${combined[0].is_highlighted}`);
+      }
+      res.json(combined);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/products/toggle', authenticate, async (req: any, res) => {
+    const { productId, isActive, priceOverride, isHighlighted } = req.body;
+    if (!req.user.root_id) return res.status(403).json({ error: 'Apenas filiais podem sobrescrever produtos da matriz' });
     
-    if (error) return res.status(400).json({ error: error.message });
-    res.json(products);
+    try {
+        const updateData: any = { 
+            branch_id: req.user.id, 
+            product_id: productId
+        };
+        if (isActive !== undefined) updateData.is_active = isActive;
+        if (priceOverride !== undefined) updateData.price_override = priceOverride;
+        if (isHighlighted !== undefined) updateData.is_highlighted = isHighlighted;
+
+        const { error } = await supabase
+          .from('branch_product_settings')
+          .upsert(updateData, { onConflict: 'branch_id,product_id' });
+        
+        if (error) throw error;
+        
+        console.log('[PRODUCTS-TOGGLE-SUCCESS] Branch settings updated for:', req.user.id);
+        clearPublicCache(); // Update catalog immediately
+        res.json({ success: true });
+    } catch (err: any) {
+        console.error('[PRODUCTS-TOGGLE-CATCH]', err);
+        res.status(400).json({ error: err.message });
+    }
   });
 
   app.post('/api/products', authenticate, async (req: any, res: any) => {
-    const { name, image, description, colors, images, consortium_image, liberacred_image, has_liberacred, has_consortium, is_highlighted, is_new, year, price, mileage, brand, condition, fuel, transmission, color, optionals, show_consortium_plans, consortium_plans, video_url, property_status } = req.body;
+    const { name, image, description, colors, images, consortium_image, liberacred_image, has_liberacred, has_consortium, is_highlighted, is_new, year, price, mileage, brand, condition, fuel, transmission, color, optionals, show_consortium_plans, consortium_plans, video_url, property_status, show_on_branches } = req.body;
     const { data, error } = await supabase
       .from('products')
       .insert({
@@ -930,8 +1443,8 @@ async function setupApp() {
         is_highlighted: !!is_highlighted,
         is_new: !!is_new,
         year: year || null,
-        price: price || null,
-        mileage: mileage || null,
+        price: cleanNumeric(price),
+        mileage: cleanNumeric(mileage),
         brand,
         condition,
         fuel,
@@ -942,7 +1455,7 @@ async function setupApp() {
         consortium_plans: Array.isArray(consortium_plans) ? JSON.stringify(consortium_plans) : (consortium_plans || '[]'),
         show_financing_plans: !!req.body.show_financing_plans,
         financing_plans: Array.isArray(req.body.financing_plans) ? JSON.stringify(req.body.financing_plans) : (req.body.financing_plans || '[]'),
-        cash_price: req.body.cash_price || null,
+        cash_price: cleanNumeric(req.body.cash_price),
         card_installments: req.body.card_installments || null,
         card_interest: !!req.body.card_interest,
         is_active: req.body.is_active !== undefined ? !!req.body.is_active : true,
@@ -952,20 +1465,22 @@ async function setupApp() {
         bathrooms: req.body.bathrooms || null,
         suites: req.body.suites || null,
         parking_spaces: req.body.parking_spaces || null,
-        area: req.body.area || null,
+        area: cleanNumeric(req.body.area),
         location: req.body.location || null,
         is_for_sale: req.body.is_for_sale !== undefined ? !!req.body.is_for_sale : true,
         is_for_rent: req.body.is_for_rent !== undefined ? !!req.body.is_for_rent : false,
-        condo_fee: req.body.condo_fee || null,
-        iptu: req.body.iptu || null,
+        condo_fee: cleanNumeric(req.body.condo_fee),
+        iptu: cleanNumeric(req.body.iptu),
         map_url: req.body.map_url || null,
         video_url: video_url || null,
-        property_status: property_status || 'ready'
+        property_status: property_status || 'ready',
+        show_on_branches: show_on_branches !== undefined ? !!show_on_branches : true
       })
       .select('id')
       .single();
     
     if (error) return res.status(400).json({ error: error.message });
+    clearPublicCache(); // Force catalog refresh
     res.json({ id: data.id });
   });
 
@@ -980,28 +1495,66 @@ async function setupApp() {
       'cash_price', 'card_installments', 'card_interest', 'is_active',
       'niche', 'property_type', 'bedrooms', 'bathrooms', 'suites', 
       'parking_spaces', 'area', 'location', 'is_for_sale', 'is_for_rent', 
-      'condo_fee', 'iptu', 'map_url', 'video_url', 'property_status'
+      'condo_fee', 'iptu', 'map_url', 'video_url', 'property_status',
+      'show_on_branches'
     ];
 
+    const fieldsToClean = ['price', 'mileage', 'area', 'cash_price', 'condo_fee', 'iptu'];
+    
     fields.forEach(field => {
       if (req.body[field] !== undefined) {
-        if (['colors', 'images', 'optionals', 'consortium_plans', 'financing_plans'].includes(field)) {
+        if (fieldsToClean.includes(field)) {
+          updateData[field] = cleanNumeric(req.body[field]);
+        } else if (['colors', 'images', 'optionals', 'consortium_plans', 'financing_plans'].includes(field)) {
           updateData[field] = Array.isArray(req.body[field]) ? JSON.stringify(req.body[field]) : req.body[field];
-        } else if (['has_liberacred', 'has_consortium', 'is_highlighted', 'is_new', 'show_consortium_plans', 'show_financing_plans', 'card_interest', 'is_active'].includes(field)) {
-          updateData[field] = !!req.body[field];
+        } else if (['has_liberacred', 'has_consortium', 'is_highlighted', 'is_new', 'show_consortium_plans', 'show_financing_plans', 'card_interest', 'is_active', 'is_for_sale', 'is_for_rent', 'show_on_branches'].includes(field)) {
+          updateData[field] = req.body[field] === true;
         } else {
           updateData[field] = req.body[field] || null;
         }
       }
     });
 
-    const { error } = await supabase
+    const productId = parseInt(req.params.id);
+    console.log(`[PRODUCTS-UPDATE] Updating product ${productId} for user ${req.user.id}:`, updateData);
+
+    // 1. Check if the product belongs to the user
+    const { data: product } = await supabase.from('products').select('user_id').eq('id', productId).single();
+    
+    if (product && product.user_id !== req.user.id) {
+       // If not owned by user, check if user is a branch and product is from their matrix
+       if (req.user.root_id && product.user_id === req.user.root_id) {
+          console.log(`[PRODUCTS-UPDATE] Product ${productId} is inherited. Saving overrides to branch_product_settings.`);
+          const { error: upsertError } = await supabase
+            .from('branch_product_settings')
+            .upsert({
+              branch_id: req.user.id,
+              product_id: productId,
+              is_active: updateData.is_active !== undefined ? updateData.is_active : true,
+              price_override: updateData.price !== undefined ? updateData.price : undefined,
+              is_highlighted: updateData.is_highlighted !== undefined ? updateData.is_highlighted : false
+            }, { onConflict: 'branch_id,product_id' });
+            
+          if (upsertError) return res.status(400).json({ error: upsertError.message });
+          return res.json({ success: true, message: 'Overrides saved' });
+       }
+       return res.status(403).json({ error: 'Você não tem permissão para editar este produto' });
+    }
+
+    const { data, error } = await supabase
       .from('products')
       .update(updateData)
-      .eq('id', parseInt(req.params.id))
-      .eq('user_id', req.user.id);
+      .eq('id', productId)
+      .eq('user_id', req.user.id)
+      .select();
     
-    if (error) return res.status(400).json({ error: error.message });
+    if (error) {
+      console.error('[PRODUCTS-UPDATE-ERROR]', error);
+      return res.status(400).json({ error: error.message });
+    }
+    
+    console.log(`[PRODUCTS-UPDATE-SUCCESS] Updated data:`, data?.[0]);
+    clearPublicCache(); // Force catalog refresh
     res.json({ success: true });
   });
 
@@ -1134,7 +1687,17 @@ async function setupApp() {
 
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`\n🚀 Servidor Rodando!`);
+    console.log(`📡 Local:            http://localhost:${PORT}`);
+    
+    const nets = os.networkInterfaces();
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name]!) {
+        if (net.family === 'IPv4' && !net.internal) {
+          console.log(`📡 Rede Local (${name}): http://${net.address}:${PORT}`);
+        }
+      }
+    }
   });
 }
 

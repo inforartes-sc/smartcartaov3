@@ -6,12 +6,14 @@ import { QRCodeCanvas } from 'qrcode.react';
 import AdminProfile from './AdminProfile';
 import AdminProducts from './AdminProducts';
 import AdminTheme from './AdminTheme';
+import AdminConsultants from './AdminConsultants';
+import AdminAgencies from './AdminAgencies';
 import UserInvoices from './UserInvoices';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { SYSTEM_VERSION, PAYMENT_SYSTEM_URL } from '../config';
-import { Menu } from 'lucide-react';
+import { Menu, Users, Target, UserPlus, ShieldCheck } from 'lucide-react';
 
 export default function UserDashboard() {
   const { user, loading, logout, setUser } = useAuth();
@@ -91,9 +93,9 @@ export default function UserDashboard() {
   const isExpiring = daysLeft !== null && daysLeft <= 10;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
+    <div className="h-screen bg-gray-50 flex flex-col lg:flex-row overflow-hidden">
       {/* Mobile Header */}
-      <header className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-40 flex items-center justify-between">
+      <header className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 fixed top-0 left-0 right-0 z-[70] flex items-center justify-between">
         <h2 className="text-lg font-bold text-[#003da5]">Painel</h2>
         <button 
           onClick={() => setIsSidebarOpen(true)}
@@ -137,6 +139,9 @@ export default function UserDashboard() {
               { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
               { to: '/dashboard/perfil', icon: User, label: 'Meu Perfil' },
               { to: '/dashboard/produtos', icon: Package, label: 'Produtos' },
+              { to: '/dashboard/consultores', icon: Users, label: 'Consultores' },
+              // Only root (Matriz) accounts can manage Agencies
+              ...(!user.root_id ? [{ to: '/dashboard/agencies', icon: ShieldCheck, label: 'Agências' }] : []),
               { to: `${PAYMENT_SYSTEM_URL}/login?email=${user?.email || ''}`, icon: Globe, label: 'Portal Financeiro', external: true },
               { to: '/dashboard/tema', icon: Palette, label: 'Tema' },
             ].map((item: any) => (
@@ -190,7 +195,7 @@ export default function UserDashboard() {
             </div>
             
             {/* Fixed Branding */}
-            <div className="p-8 border-t border-gray-50 flex flex-col items-center justify-center bg-gray-50/50">
+            <div className="p-4 border-t border-gray-50 flex flex-col items-center justify-center bg-gray-50/50">
               {settings?.footer_logo ? (
                   <img src={settings.footer_logo} alt="Consultor Logo" className="h-10 w-auto object-contain mb-3 mx-auto" />
               ) : (
@@ -203,7 +208,7 @@ export default function UserDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-grow p-4 lg:p-8 overflow-y-auto w-full max-w-7xl mx-auto lg:mx-0">
+      <main className="flex-grow p-3 lg:p-6 overflow-y-auto w-full mt-16 lg:mt-0">
         {user.admin_message && (
           <div className="mb-6 bg-blue-600 text-white p-5 rounded-[24px] shadow-lg shadow-blue-200 border border-blue-500 animate-in slide-in-from-top-4 duration-500 flex items-center gap-4 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl group-hover:bg-white/20 transition-all duration-700"></div>
@@ -249,7 +254,42 @@ export default function UserDashboard() {
 
         <Routes>
           <Route path="/" element={
-            <div className="max-w-4xl space-y-6">
+            <div className="w-full space-y-4">
+              {/* Estatísticas da Equipe (Nova Seção) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-4">
+                <div className="bg-white p-4 md:p-5 rounded-2xl md:rounded-[2rem] border border-gray-100 shadow-sm flex items-center gap-4 group hover:shadow-xl hover:border-blue-100 transition-all duration-500">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-50 text-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Users className="w-5 h-5 md:w-6 md:h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl md:text-2xl font-black text-gray-900 leading-none">{user.consultants_count || 0}</h4>
+                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">Consultores</p>
+                  </div>
+                </div>
+                
+                <div className="bg-white p-4 md:p-5 rounded-2xl md:rounded-[2rem] border border-gray-100 shadow-sm flex items-center gap-4 group hover:shadow-xl hover:border-emerald-100 transition-all duration-500">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-50 text-emerald-600 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <UserPlus className="w-5 h-5 md:w-6 md:h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl md:text-2xl font-black text-gray-900 leading-none">
+                      {Math.max(0, (user.plan?.consultants_limit || 1) - (user.consultants_count || 0))}
+                    </h4>
+                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">Vagas Livres</p>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 md:p-5 rounded-2xl md:rounded-[2rem] border border-gray-100 shadow-sm flex items-center gap-4 group hover:shadow-xl hover:border-purple-100 transition-all duration-500 sm:col-span-2 lg:col-span-1">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-50 text-purple-600 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Target className="w-5 h-5 md:w-6 md:h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs md:text-xs font-black text-gray-900 leading-none truncate max-w-[150px] md:max-w-[120px]">{user.plan?.name || 'Iniciante'}</h4>
+                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">Seu Plano</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Estatísticas do Catálogo */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
                 
@@ -366,33 +406,12 @@ export default function UserDashboard() {
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-900"><LayoutDashboard className="w-5 h-5" /></span>
-                  <h3 className="font-bold text-xl text-gray-900">Ações Rápidas</h3>
-                </div>
-                <p className="text-xs text-gray-400 -mt-3 mb-4">Acesse as principais funcionalidades</p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Link to="/dashboard/produtos" className="bg-white p-6 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center">
-                    <Package className="w-8 h-8 text-gray-300 group-hover:text-blue-500 mb-3 transition-colors" />
-                    <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Gerenciar Produtos</span>
-                  </Link>
-                  <Link to="/dashboard/perfil" className="bg-white p-6 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center">
-                    <User className="w-8 h-8 text-gray-300 group-hover:text-blue-500 mb-3 transition-colors" />
-                    <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Editar Perfil</span>
-                  </Link>
-                  <Link to="/dashboard/tema" className="bg-white p-6 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center">
-                    <Palette className="w-8 h-8 text-gray-300 group-hover:text-blue-500 mb-3 transition-colors" />
-                    <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Configurar Tema</span>
-                  </Link>
-                </div>
-              </div>
             </div>
           } />
           <Route path="/perfil" element={<AdminProfile user={user} onUpdate={setUser} />} />
           <Route path="/produtos" element={<AdminProducts />} />
+          <Route path="/consultores" element={<AdminConsultants />} />
+          {!user.root_id && <Route path="/agencies" element={<AdminAgencies />} />}
           <Route path="/tema" element={<AdminTheme user={user} onUpdate={setUser} />} />
         </Routes>
       </main>

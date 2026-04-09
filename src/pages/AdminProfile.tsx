@@ -129,10 +129,10 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto lg:mx-0">
+    <div className="w-full pb-8">
       <h1 className="text-2xl lg:text-3xl font-black text-gray-900 mb-8 uppercase tracking-tight">Editar Perfil</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white p-5 lg:p-8 rounded-3xl lg:rounded-[2rem] shadow-sm border border-gray-100 space-y-6 lg:space-y-8">
+      <form onSubmit={handleSubmit} className="bg-white p-5 md:p-8 rounded-3xl lg:rounded-[2rem] shadow-sm border border-gray-100 space-y-6 lg:space-y-8">
         {/* Profile Image Upload */}
         <div className="flex flex-col items-center mb-6">
           <div className="relative group">
@@ -149,14 +149,14 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
           <p className="text-sm text-gray-500 mt-2">{uploading ? 'Enviando...' : 'Clique para alterar a foto'}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nome de Exibição</label>
             <input
               type="text"
               value={formData.display_name || ''}
               onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-2 border border-blue-50 bg-blue-50/10 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
             />
           </div>
           <div>
@@ -165,7 +165,7 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
               type="text"
               value={formData.establishment || ''}
               onChange={(e) => setFormData({ ...formData, establishment: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-2 border border-gray-100 bg-gray-50/30 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="Ex: Yamaha Motos"
             />
           </div>
@@ -175,13 +175,13 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
               type="text"
               value={formData.role_title || ''}
               onChange={(e) => setFormData({ ...formData, role_title: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-2 border border-gray-100 bg-gray-50/30 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nicho / Setor (Área de Atuação)</label>
-            <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-blue-600">
-              {formData.niche === 'realestate' ? 'Mercado Imobiliário' : 'Revenda de Veículos'}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Área de Atuação</label>
+            <div className="px-4 py-2 bg-blue-50 border border-blue-100 rounded-xl text-sm font-bold text-blue-600">
+              {formData.niche === 'realestate' ? '🏠 Mercado Imobiliário' : '🚗 Revenda de Veículos'}
             </div>
           </div>
         </div>
@@ -199,36 +199,38 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
 
         <div className="space-y-4">
           <h3 className="font-bold text-gray-900">Links Sociais</h3>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp (com DDD)</label>
-            <input
-              type="text"
-              value={formData.whatsapp}
-              onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="5599999999999"
-            />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+             <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp (com DDD)</label>
+             <input
+               type="text"
+               value={formData.whatsapp}
+               onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+               className="w-full h-12 px-4 border border-gray-100 bg-gray-50/50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+               placeholder="5599999999999"
+             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">URL Instagram</label>
+          <div className="col-span-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Instagram (URL)</label>
             <input
               type="text"
               value={formData.instagram}
               onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full h-12 px-4 border border-gray-100 bg-gray-50/50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="https://instagram.com/usuario"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">URL Facebook</label>
+          <div className="col-span-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Facebook (URL)</label>
             <input
               type="text"
               value={formData.facebook}
               onChange={(e) => setFormData({ ...formData, facebook: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full h-12 px-4 border border-gray-100 bg-gray-50/50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="https://facebook.com/usuario"
             />
           </div>
+        </div>
         </div>
 
         {/* Dynamic Social Links */}
@@ -270,20 +272,20 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
                       placeholder="Ex: Meu Portfólio"
                       value={link.label}
                       onChange={(e) => updateSocialLink(index, 'label', e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                      className="w-full h-11 px-4 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                     />
                     <input
                       type="text"
                       placeholder="URL (https://...)"
                       value={link.url}
                       onChange={(e) => updateSocialLink(index, 'url', e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                      className="w-full h-11 px-4 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => removeSocialLink(index)}
-                    className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                    className="p-3 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
@@ -299,84 +301,80 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
         <div className="space-y-4 pt-4 border-t border-gray-100">
           <h3 className="font-bold text-gray-900">Customização do Cartão</h3>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Imagem do Rodapé (Frente do Cartão)</label>
-            <div className="relative h-48 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden group">
-              {formData.card_bottom_image ? (
-                <img src={formData.card_bottom_image} className="w-full h-full object-contain p-4" alt="Footer" />
-              ) : (
-                <img 
-                  src={formData.niche === 'realestate' ? "/defaults/realestate.png" : "https://omeucartao.com.br/wp-content/uploads/2025/02/17.png"} 
-                  className="w-full h-full object-contain p-4 opacity-30 grayscale" 
-                  alt="Default" 
-                />
-              )}
-              <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
-                <span className="bg-white/20 px-4 py-2 rounded-full font-bold text-sm backdrop-blur-md">Alterar Imagem</span>
-                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'card_bottom_image')} />
-              </label>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4 border-t border-gray-100">
+            {/* Imagem do Rodapé */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Imagem do Rodapé</label>
+              <div className="relative h-40 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center overflow-hidden group shadow-inner">
+                {formData.card_bottom_image ? (
+                  <img src={formData.card_bottom_image} className="w-full h-full object-contain p-4" alt="Footer" />
+                ) : (
+                  <img 
+                    src={formData.niche === 'realestate' ? "/defaults/realestate.png" : "https://omeucartao.com.br/wp-content/uploads/2025/02/17.png"} 
+                    className="w-full h-full object-contain p-4 opacity-30 grayscale" 
+                    alt="Default" 
+                  />
+                )}
+                <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity backdrop-blur-sm">
+                  <span className="bg-white/20 px-4 py-2 rounded-full font-bold text-[10px] backdrop-blur-md">Alterar</span>
+                  <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'card_bottom_image')} />
+                </label>
+              </div>
             </div>
-            <p className="text-[11px] text-gray-400 mt-2 italic px-1">Esta imagem substitui o veículo padrão que aparece no final do seu cartão digital.</p>
-          </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-700 font-bold uppercase tracking-tight text-[#003da5]">Banner Superior do Catálogo</label>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-gray-400 uppercase">{formData.show_catalog_banner ? 'Ativado' : 'Desativado'}</span>
+            {/* Banner Catálogo */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Banner Catálogo</label>
                 <input
                   type="checkbox"
                   checked={formData.show_catalog_banner}
                   onChange={(e) => setFormData({ ...formData, show_catalog_banner: e.target.checked })}
-                  className="w-10 h-5 bg-gray-200 rounded-full appearance-none checked:bg-blue-600 transition-all cursor-pointer relative before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 checked:before:left-5.5 before:transition-all shadow-inner"
+                  className="w-8 h-4 bg-gray-200 rounded-full appearance-none checked:bg-blue-600 transition-all cursor-pointer relative before:content-[''] before:absolute before:w-3 before:h-3 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 checked:before:left-4.5 before:transition-all shadow-inner"
                 />
               </div>
+              <div className="relative h-40 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center overflow-hidden group shadow-inner">
+                {formData.card_background_image ? (
+                  <img src={formData.card_background_image} className="w-full h-full object-contain p-4" alt="Catalog Banner" />
+                ) : (
+                  <div className="text-center text-gray-400">
+                    <Plus className="w-8 h-8 mx-auto mb-1 opacity-20" />
+                    <p className="text-[10px]">Adicionar Banner</p>
+                  </div>
+                )}
+                <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity backdrop-blur-sm">
+                  <span className="bg-white/20 px-4 py-2 rounded-full font-bold text-[10px] backdrop-blur-md">Alterar</span>
+                  <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'card_background_image')} />
+                </label>
+              </div>
             </div>
-            <div className="relative h-48 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden group">
-              {formData.card_background_image ? (
-                <img src={formData.card_background_image} className="w-full h-full object-contain p-4" alt="Catalog Banner" />
-              ) : (
-                <div className="text-center text-gray-400">
-                  <Plus className="w-10 h-10 mx-auto mb-2 opacity-20" />
-                  <p className="text-xs">Adicionar Banner do Catálogo</p>
-                </div>
-              )}
-              <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
-                <span className="bg-white/20 px-4 py-2 rounded-full font-bold text-sm backdrop-blur-md">Alterar Banner</span>
-                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'card_background_image')} />
-              </label>
-            </div>
-            <p className="text-[11px] text-gray-400 mt-1 italic px-1">Aparece no topo do seu catálogo de produtos.</p>
-          </div>
 
-          <div className="pt-4 border-t border-gray-100 space-y-4">
-             <div className="flex items-center justify-between mb-4">
-              <label className="block text-sm font-medium text-gray-700 font-bold uppercase tracking-tight text-[#003da5]">Banner na Página de Perfil</label>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-gray-400 uppercase">{formData.show_profile_banner ? 'Ativado' : 'Desativado'}</span>
+            {/* Banner Perfil */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Banner Perfil</label>
                 <input
                   type="checkbox"
                   checked={formData.show_profile_banner}
                   onChange={(e) => setFormData({ ...formData, show_profile_banner: e.target.checked })}
-                  className="w-10 h-5 bg-gray-200 rounded-full appearance-none checked:bg-blue-600 transition-all cursor-pointer relative before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 checked:before:left-5.5 before:transition-all shadow-inner"
+                  className="w-8 h-4 bg-gray-200 rounded-full appearance-none checked:bg-blue-600 transition-all cursor-pointer relative before:content-[''] before:absolute before:w-3 before:h-3 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 checked:before:left-4.5 before:transition-all shadow-inner"
                 />
               </div>
+              <div className="relative h-40 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center overflow-hidden group shadow-inner">
+                {formData.profile_banner_image ? (
+                  <img src={formData.profile_banner_image} className="w-full h-full object-contain p-4" alt="Profile Banner" />
+                ) : (
+                  <div className="text-center text-gray-400">
+                    <Plus className="w-8 h-8 mx-auto mb-1 opacity-20" />
+                    <p className="text-[10px]">Adicionar Banner</p>
+                  </div>
+                )}
+                <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity backdrop-blur-sm">
+                  <span className="bg-white/20 px-4 py-2 rounded-full font-bold text-[10px] backdrop-blur-md">Alterar</span>
+                  <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'profile_banner_image')} />
+                </label>
+              </div>
             </div>
-            <div className="relative h-48 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden group">
-              {formData.profile_banner_image ? (
-                <img src={formData.profile_banner_image} className="w-full h-full object-contain p-4" alt="Profile Page Banner" />
-              ) : (
-                <div className="text-center text-gray-400">
-                  <Plus className="w-10 h-10 mx-auto mb-2 opacity-20" />
-                  <p className="text-xs">Adicionar Banner Específico do Perfil</p>
-                </div>
-              )}
-              <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
-                <span className="bg-white/20 px-4 py-2 rounded-full font-bold text-sm backdrop-blur-md">Alterar Banner</span>
-                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'profile_banner_image')} />
-              </label>
-            </div>
-            <p className="text-[11px] text-gray-400 mt-1 italic px-1">Se não definido, usará o mesmo banner do catálogo. Aparece no topo do seu cartão digital pessoal.</p>
           </div>
           <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 space-y-4">
             <div className="flex items-center justify-between">
@@ -437,17 +435,17 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
           <Key className="w-5 h-5 text-amber-500" />
           Segurança da Conta
         </h2>
-        <form onSubmit={handlePasswordChange} className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+        <form onSubmit={handlePasswordChange} className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1 font-bold uppercase tracking-tight text-[10px]">Nova Senha</label>
+              <label className="block text-[10px] font-black uppercase text-gray-400 mb-2 ml-1 tracking-widest">Nova Senha</label>
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
                   value={passwordForm.password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, password: e.target.value })}
                   autoComplete="new-password"
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none pr-10"
+                  className="w-full h-12 px-4 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-amber-400 outline-none pr-10"
                   placeholder="Mínimo 6 caracteres"
                 />
                 <button
@@ -460,13 +458,13 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 font-bold uppercase tracking-tight text-[10px]">Confirmar Senha</label>
+              <label className="block text-[10px] font-black uppercase text-gray-400 mb-2 ml-1 tracking-widest">Confirmar Senha</label>
               <input
                 type={showPass ? 'text' : 'password'}
                 value={passwordForm.confirm}
                 onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
                 autoComplete="new-password"
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                className="w-full h-12 px-4 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-amber-400 outline-none"
                 placeholder="Repita a nova senha"
               />
             </div>
@@ -474,7 +472,7 @@ export default function AdminProfile({ user, onUpdate }: AdminProfileProps) {
           <button
             type="submit"
             disabled={passLoading || !passwordForm.password}
-            className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-100 disabled:opacity-50"
+            className="w-full bg-amber-400 hover:bg-amber-500 text-amber-900 font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-50 disabled:opacity-50 uppercase tracking-widest text-xs"
           >
             {passLoading ? 'Alterando...' : 'Atualizar Minha Senha'}
           </button>

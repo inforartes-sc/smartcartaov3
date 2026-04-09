@@ -1,7 +1,7 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { Product } from '../types';
 import { motion } from 'motion/react';
-import { MessageCircle, Info, FileText, Calculator, CreditCard, ChevronLeft, ChevronRight, Package, Check, MapPin, Maximize, Bed, Bath, Car } from 'lucide-react';
+import { MessageCircle, Info, FileText, Calculator, CreditCard, ChevronLeft, ChevronRight, Package, Check, MapPin, Maximize, Bed, Bath, Car, ShieldCheck, Star } from 'lucide-react';
 import Modal from './Modal';
 import FinancingForm from './FinancingForm';
 import ThreeSixtyViewer from './ThreeSixtyViewer';
@@ -511,7 +511,7 @@ export default function ProductCard({
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-gray-400 uppercase">No Cartão</span>
                     <span className="text-xs font-bold text-gray-800">
-                      {product.card_installments} {product.card_interest ? 'c/ Juros' : 's/ Juros'}
+                      {product.card_installments} parcelas {product.card_interest ? 'com juros' : 'sem juros'}
                     </span>
                   </div>
                 )}
@@ -647,15 +647,29 @@ export default function ProductCard({
         title="Liberacred"
       >
         <div className="space-y-4">
-          <img 
-            src={product.liberacredImage || "https://omeucartao.com.br/wp-content/uploads/2025/05/10-3.png"} 
-            alt="Liberacred" 
-            className="w-full rounded-xl" 
-            referrerPolicy="no-referrer"
-          />
-          <p className="text-gray-600">
-            O Liberacred é a facilidade que você precisava para conquistar sua Yamaha. Consulte condições especiais.
-          </p>
+          {product.liberacredImage ? (
+            <>
+              <img 
+                src={product.liberacredImage} 
+                alt="Liberacred" 
+                className="w-full rounded-xl shadow-lg border border-gray-100" 
+                referrerPolicy="no-referrer"
+              />
+              <p className="text-gray-600 font-medium text-center">
+                Consulte as condições especiais do programa Liberacred.
+              </p>
+            </>
+          ) : (
+            <div className="py-20 text-center space-y-4 bg-orange-50/30 rounded-[2.5rem] border-2 border-dashed border-orange-100">
+               <div className="w-20 h-20 bg-white text-orange-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                 <ShieldCheck className="w-10 h-10" />
+               </div>
+               <div className="space-y-1">
+                 <p className="text-orange-900 font-black uppercase tracking-[0.2em] text-xs">Liberacred Ativo</p>
+                 <p className="text-orange-600/70 text-[10px] font-bold uppercase">BANNER NÃO CADASTRADO</p>
+               </div>
+            </div>
+          )}
         </div>
       </Modal>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Package, Eye, Trash2, Shield, ShieldAlert, Search, ExternalLink, Settings, Phone, Image as ImageIcon, Upload, Loader2, Save } from 'lucide-react';
+import { Users, Package, Eye, Trash2, Shield, ShieldAlert, Search, ExternalLink, Settings, Phone, Image as ImageIcon, Upload, Loader2, Save, Plus, Edit2, CheckCircle2, X, Crown, User, Timer, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function MasterAdmin() {
@@ -8,9 +8,14 @@ export default function MasterAdmin() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddUser, setShowAddUser] = useState(false);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [editingPlan, setEditingPlan] = useState<any>(null);
+  const [updatingPlan, setUpdatingPlan] = useState(false);
   const [globalSettings, setGlobalSettings] = useState({
     default_logo: '',
-    default_phone: ''
+    default_phone: '',
+    semiannual_discount: 15,
+    annual_discount: 30
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -28,10 +33,11 @@ export default function MasterAdmin() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersRes, statsRes, settingsRes] = await Promise.all([
+      const [usersRes, statsRes, settingsRes, plansRes] = await Promise.all([
         fetch('/api/admin/users'),
         fetch('/api/admin/stats'),
-        fetch('/api/admin/settings')
+        fetch('/api/admin/settings'),
+        fetch('/api/admin/plans')
       ]);
 
       if (usersRes.ok && statsRes.ok) {
@@ -40,6 +46,9 @@ export default function MasterAdmin() {
         if (settingsRes.ok) {
           setGlobalSettings(await settingsRes.json());
         }
+        if (plansRes.ok) {
+          setPlans(await plansRes.json());
+        }
       } else {
         toast.error('Erro ao carregar dados do Master Admin');
       }
@@ -47,6 +56,32 @@ export default function MasterAdmin() {
       toast.error('Erro de conexão');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdatePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPlan) return;
+    
+    try {
+      setUpdatingPlan(true);
+      const res = await fetch(`/api/admin/plans/${editingPlan.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingPlan)
+      });
+      
+      if (res.ok) {
+        toast.success('Plano atualizado com sucesso!');
+        setEditingPlan(null);
+        fetchData();
+      } else {
+        toast.error('Erro ao atualizar plano');
+      }
+    } catch (err) {
+      toast.error('Erro de conexão');
+    } finally {
+      setUpdatingPlan(false);
     }
   };
 
@@ -159,16 +194,16 @@ export default function MasterAdmin() {
     }
   };
 
-  const filteredUsers = users.filter(u => 
+  const filteredUsers = users.filter((u: any) => 
     u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.slug.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) return <div className="p-8 text-center">Carregando painel master...</div>;
+  if (loading) return <div className="p-8 text-center font-bold text-gray-500">Carregando painel master...</div>;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">Master Admin</h1>
@@ -207,7 +242,6 @@ export default function MasterAdmin() {
           <h2 className="font-bold text-gray-800">Configurações Gerais (Padrão para Novos Usuários)</h2>
         </div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Logo Section */}
           <div className="space-y-4">
             <label className="block text-sm font-bold text-gray-700 flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-blue-500" />
@@ -243,7 +277,6 @@ export default function MasterAdmin() {
             </div>
           </div>
 
-          {/* Phone Section */}
           <div className="space-y-4">
             <label className="block text-sm font-bold text-gray-700 flex items-center gap-2">
               <Phone className="w-4 h-4 text-emerald-500" />
@@ -259,6 +292,33 @@ export default function MasterAdmin() {
               />
               <p className="text-[10px] text-gray-400">Este número será configurado automaticamente em todos os novos usuários criados.</p>
             </div>
+          </div>
+
+          <div className="space-y-4 md:col-span-2 pt-4 border-t border-gray-50">
+            <label className="block text-sm font-bold text-gray-700 flex items-center gap-2">
+              <Package className="w-4 h-4 text-blue-500" />
+              Incentivos de Assinatura (Exibidos na Landing Page)
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Desconto Semestral (%)</label>
+                  <input
+                    type="number"
+                    value={globalSettings.semiannual_discount}
+                    onChange={(e) => setGlobalSettings({ ...globalSettings, semiannual_discount: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+               </div>
+               <div>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Desconto Anual (%)</label>
+                  <input
+                    type="number"
+                    value={globalSettings.annual_discount}
+                    onChange={(e) => setGlobalSettings({ ...globalSettings, annual_discount: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+               </div>
+            </div>
             <div className="flex justify-end pt-4">
               <button
                 onClick={handleSaveSettings}
@@ -273,143 +333,241 @@ export default function MasterAdmin() {
         </div>
       </div>
 
-      {/* Add User Section */}
-      {showAddUser ? (
-        <div className="bg-white p-8 rounded-3xl border border-blue-100 shadow-lg shadow-blue-50 animate-in slide-in-from-top-4 duration-300">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              Cadastrar Novo Usuário
-            </h2>
-            <button onClick={() => setShowAddUser(false)} className="text-gray-400 hover:text-gray-600 font-medium">Cancelar</button>
+      {/* Plans Management Section */}
+      <div id="plans-section" className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Package className="w-5 h-5 text-orange-600" />
+            <h2 className="font-bold text-gray-800">Planos e Vagas</h2>
           </div>
-          <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Nome Completo</label>
-              <input
-                type="text"
-                required
-                value={newUserData.display_name}
-                onChange={(e) => setNewUserData({ ...newUserData, display_name: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ex: Rose Farias"
-              />
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Master Control</p>
+        </div>
+        
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {plans.map((plan) => (
+            <div key={plan.id} className="bg-gray-50/50 border border-gray-100 rounded-2xl p-5 hover:border-blue-200 transition-all group relative">
+              <button 
+                onClick={() => setEditingPlan(plan)}
+                className="absolute top-4 right-4 p-2 bg-white text-blue-600 rounded-lg shadow-sm border border-gray-100 opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-600 hover:text-white"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+              
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-black italic shadow-lg shadow-blue-100">
+                  {plan.name?.substring(0, 1)}
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 leading-none">{plan.name}</h3>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">ID: {plan.id}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-end">
+                  <span className="text-[10px] uppercase font-bold text-gray-400">Preço</span>
+                  <p className="text-xl font-black text-gray-900 leading-none">R$ {plan.price}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div className="bg-white p-2 rounded-lg border border-gray-100 text-center">
+                    <p className="text-[8px] uppercase font-bold text-gray-400">Vagas</p>
+                    <p className="text-xs font-black text-gray-900">{plan.quota || '---'}</p>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg border border-gray-100 text-center">
+                    <p className="text-[8px] uppercase font-bold text-gray-400">Filiais</p>
+                    <p className="text-xs font-black text-gray-900">{plan.agencies || '---'}</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Usuário / Email</label>
-              <input
-                type="text"
-                required
-                value={newUserData.username}
-                onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ex: rose.farias"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Link (Slug)</label>
-              <input
-                type="text"
-                required
-                value={newUserData.slug}
-                onChange={(e) => setNewUserData({ ...newUserData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ex: rose-farias"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Senha Inicial</label>
-              <input
-                type="password"
-                required
-                value={newUserData.password}
-                onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="••••••••"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">E-mail</label>
-              <input
-                type="email"
-                required
-                value={newUserData.email}
-                onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="exemplo@email.com"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">CPF / CNPJ</label>
-              <input
-                type="text"
-                required
-                value={newUserData.documento}
-                onChange={(e) => setNewUserData({ ...newUserData, documento: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="000.000.000-00"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Cargo / Título</label>
-              <input
-                type="text"
-                required
-                value={newUserData.role_title}
-                onChange={(e) => setNewUserData({ ...newUserData, role_title: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Nicho / Setor</label>
-                <select
-                  value={(newUserData as any).niche || 'vehicle'}
-                  onChange={(e) => {
-                    const newNiche = e.target.value;
-                    const defaultRole = newNiche === 'realestate' ? 'Corretor(a) de Imóveis' : 'Consultor(a) Yamaha';
-                    setNewUserData({ ...newUserData, niche: newNiche, role_title: defaultRole } as any);
-                  }}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 appearance-none font-bold text-blue-600"
-                >
-                  <option value="vehicle">Revenda de Veículos</option>
-                  <option value="realestate">Mercado Imobiliário</option>
-                </select>
-            </div>
-            <div className="flex items-end">
-              <button type="submit" className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-100">
-                Criar Usuário
+          ))}
+        </div>
+      </div>
+
+      {/* Edit Plan Modal */}
+      {editingPlan && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center font-black">
+                  <Edit2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Configurar {editingPlan.name}</h2>
+                  <p className="text-xs text-gray-500">ID do Plano: {editingPlan.id}</p>
+                </div>
+              </div>
+              <button onClick={() => setEditingPlan(null)} className="p-3 hover:bg-white rounded-2xl transition-all">
+                <X className="w-6 h-6 text-gray-400" />
               </button>
             </div>
-          </form>
+
+            <form onSubmit={handleUpdatePlan} className="p-8 space-y-6">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Nome do Plano</label>
+                    <input
+                      type="text"
+                      value={editingPlan.name || ''}
+                      onChange={(e) => setEditingPlan({ ...editingPlan, name: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Preço Mensal (R$)</label>
+                    <input
+                      type="text"
+                      value={editingPlan.price || ''}
+                      onChange={(e) => setEditingPlan({ ...editingPlan, price: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Vagas (Cotas)</label>
+                    <input
+                      type="text"
+                      value={editingPlan.quota || ''}
+                      onChange={(e) => setEditingPlan({ ...editingPlan, quota: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Limite de Filiais</label>
+                    <input
+                      type="text"
+                      value={editingPlan.agencies || ''}
+                      onChange={(e) => setEditingPlan({ ...editingPlan, agencies: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Ciclo de Faturamento</label>
+                    <select
+                      value={editingPlan.billing_cycle || 'monthly'}
+                      onChange={(e) => setEditingPlan({ ...editingPlan, billing_cycle: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 appearance-none text-blue-600 font-bold"
+                    >
+                      <option value="monthly">Mensal</option>
+                      <option value="semiannual">Semestral</option>
+                      <option value="annual">Anual</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-3 pt-6">
+                     <input
+                       type="checkbox"
+                       id="is_popular"
+                       checked={editingPlan.is_popular || false}
+                       onChange={(e) => setEditingPlan({ ...editingPlan, is_popular: e.target.checked })}
+                       className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                     />
+                     <label htmlFor="is_popular" className="text-sm font-bold text-gray-700 uppercase tracking-tight cursor-pointer">Recomendado</label>
+                  </div>
+               </div>
+
+               <div>
+                 <label className="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Descrição curta</label>
+                 <textarea
+                   rows={2}
+                   value={editingPlan.description || ''}
+                   onChange={(e) => setEditingPlan({ ...editingPlan, description: e.target.value })}
+                   className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500 resize-none font-bold"
+                 />
+               </div>
+
+               <div>
+                 <label className="block text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Recursos (separados por vírgula)</label>
+                 <textarea
+                   rows={3}
+                   value={editingPlan.features || ''}
+                   onChange={(e) => setEditingPlan({ ...editingPlan, features: e.target.value })}
+                   className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500 resize-none font-bold"
+                 />
+               </div>
+
+               <div className="flex gap-4 pt-4">
+                 <button 
+                   type="button" 
+                   onClick={() => setEditingPlan(null)}
+                   className="flex-1 px-6 py-4 bg-gray-100 text-gray-600 rounded-[1.5rem] font-bold hover:bg-gray-200 transition-all"
+                 >
+                   Cancelar
+                 </button>
+                 <button 
+                   type="submit"
+                   disabled={updatingPlan}
+                   className="flex-[2] px-6 py-4 bg-blue-600 text-white rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                 >
+                   {updatingPlan ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                   Salvar Alterações
+                 </button>
+               </div>
+            </form>
+          </div>
         </div>
-      ) : (
-        <button 
-          onClick={() => setShowAddUser(true)}
-          className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
-        >
-          <Users className="w-5 h-5" />
-          Novo Usuário
-        </button>
       )}
 
-      {/* Users Table */}
+      {/* Users Table and Search */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h2 className="font-bold text-gray-800 flex items-center gap-2">
             <Shield className="w-5 h-5 text-blue-600" />
             Controle de Usuários
           </h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar por usuário, nome ou link..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64"
-            />
+          <div className="flex items-center gap-3">
+             <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64"
+                />
+             </div>
+             <button 
+               onClick={() => setShowAddUser(!showAddUser)}
+               className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-md shadow-blue-100"
+             >
+               {showAddUser ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+               {showAddUser ? 'Fechar' : 'Novo'}
+             </button>
           </div>
         </div>
+
+        {showAddUser && (
+           <div className="p-8 bg-blue-50/30 border-b border-blue-50 animate-in slide-in-from-top duration-300">
+              <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="lg:col-span-2">
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Nome Completo</label>
+                  <input type="text" required value={newUserData.display_name} onChange={(e) => setNewUserData({...newUserData, display_name: e.target.value})} className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Usuário</label>
+                  <input type="text" required value={newUserData.username} onChange={(e) => setNewUserData({...newUserData, username: e.target.value})} className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Link (Slug)</label>
+                  <input type="text" required value={newUserData.slug} onChange={(e) => setNewUserData({...newUserData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})} className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Email</label>
+                  <input type="email" required value={newUserData.email} onChange={(e) => setNewUserData({...newUserData, email: e.target.value})} className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Senha</label>
+                  <input type="password" required value={newUserData.password} onChange={(e) => setNewUserData({...newUserData, password: e.target.value})} className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">CPF/CNPJ</label>
+                  <input type="text" value={newUserData.documento} onChange={(e) => setNewUserData({...newUserData, documento: e.target.value})} className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                   <button type="submit" className="w-full mt-5 bg-emerald-600 text-white font-bold py-2 rounded-xl hover:bg-emerald-700 transition-all shadow-md">Criar Conta</button>
+                </div>
+              </form>
+           </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -423,7 +581,7 @@ export default function MasterAdmin() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredUsers.map((u) => (
+              {filteredUsers.map((u: any) => (
                 <tr key={u.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -431,7 +589,7 @@ export default function MasterAdmin() {
                         {u.profile_image ? (
                           <img src={u.profile_image} className="w-full h-full object-cover" />
                         ) : (
-                          u.username.substring(0, 1).toUpperCase()
+                          u.username?.substring(0, 1).toUpperCase()
                         )}
                       </div>
                       <div>
@@ -441,11 +599,7 @@ export default function MasterAdmin() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <a 
-                      href={`/${u.slug}`} 
-                      target="_blank" 
-                      className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-1"
-                    >
+                    <a href={`/${u.slug}`} target="_blank" className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-1">
                       /{u.slug}
                       <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </a>
@@ -459,35 +613,15 @@ export default function MasterAdmin() {
                       <span className="text-gray-300 text-[10px] font-bold uppercase tracking-tighter">Membro</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-center font-bold text-gray-600 text-sm">
-                    {u.views || 0}
-                  </td>
+                  <td className="px-6 py-4 text-center font-bold text-gray-600 text-sm">{u.views || 0}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => toggleAdmin(u.id, u.is_admin)}
-                        title={u.is_admin ? "Remover Admin" : "Tornar Admin"}
-                        className={`p-2 rounded-lg transition-all ${u.is_admin ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-400 hover:bg-amber-50 hover:text-amber-600'}`}
-                      >
-                        <Shield className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteUser(u.id, u.username)}
-                        className="p-2 bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <button onClick={() => toggleAdmin(u.id, u.is_admin)} className={`p-2 rounded-lg transition-all ${u.is_admin ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-400 hover:bg-amber-50'}`}><Shield className="w-4 h-4" /></button>
+                      <button onClick={() => handleDeleteUser(u.id, u.username)} className="p-2 bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </td>
                 </tr>
               ))}
-              {filteredUsers.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">
-                    Nenhum usuário encontrado para "{searchTerm}"
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>

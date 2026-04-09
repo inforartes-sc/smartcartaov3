@@ -1,0 +1,83 @@
+﻿[dotenv@17.3.1] injecting env (8) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+­ƒÜÇ Iniciando Migra├º├úo Total...
+­ƒöù De: https://jtakcojvidnkcyfxvogo.supabase.co
+­ƒöù Para: https://gfqlyhnrpiwbfpiecskj.supabase.co
+­ƒôÑ Coletando dados de: system_settings...
+Ô£à 1 registros coletados.
+­ƒôÑ Coletando dados de: plans...
+Ô£à 3 registros coletados.
+­ƒôÑ Coletando dados de: testimonials...
+Ô£à 3 registros coletados.
+­ƒôÑ Coletando dados de: onboarding_submissions...
+Ô£à 0 registros coletados.
+­ƒôÑ Coletando dados de: profiles...
+Ô£à 8 registros coletados.
+­ƒôÑ Coletando dados de: products...
+Ô£à 22 registros coletados.
+­ƒôÑ Coletando dados de: faturas...
+Ô£à 1 registros coletados.
+
+­ƒæñ Recriando contas de usu├írios no Auth...
+node : ÔØî [Auth] Erro ao criar 
+fernandoamaral@smartcartao.com: A user with 
+this email address has already been 
+registered
+No linha:1 caractere:1
++ node migrate_full.js > migration_out.txt 
+2>&1; Get-Content migration_ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~
+    + CategoryInfo          : NotSpecified: 
+    (ÔØî [Auth] Erro...been registered:Str  
+  ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommand 
+   Error
+ 
+ÔØî [Auth] Erro ao criar 
+joelsonsouza@smartcartao.com: A user with 
+this email address has already been 
+registered
+ÔØî [Auth] Erro ao criar 
+paulabrazao991@gmail.com: A user with this 
+email address has already been registered
+ÔØî [Auth] Erro ao criar 
+deuzielearaujo@smartcartao.com: A user with 
+this email address has already been 
+registered
+ÔØî [Auth] Erro ao criar 
+olzenisgomes@gmail.com: A user with this 
+email address has already been registered
+ÔØî [Auth] Erro ao criar 
+negocionlinefree@gmail.com: A user with 
+this email address has already been 
+registered
+ÔØî [Auth] Erro ao criar 
+andregomes7064@gmail.com: A user with this 
+email address has already been registered
+ÔØî [Auth] Erro ao criar 
+inforartes.ap@gmail.com: A user with this 
+email address has already been registered
+
+­ƒôæ Migrando Perfis...
+ÔØî Erro no Profiles: Could not find the 
+'background_color' column of 'profiles' in 
+the schema cache
+­ƒôæ Migrando system_settings...
+­ƒôæ Migrando plans...
+ÔØî Erro plans: Could not find the 
+'created_at' column of 'plans' in the 
+schema cache
+­ƒôæ Migrando testimonials...
+ÔØî Erro testimonials: Could not find the 
+'avatar_url' column of 'testimonials' in 
+the schema cache
+­ƒôæ Migrando onboarding_submissions...
+­ƒôæ Migrando products...
+ÔØî Erro products: Could not find the 
+'consortium_image' column of 'products' in 
+the schema cache
+­ƒôæ Migrando faturas...
+ÔØî Erro faturas: invalid input syntax for 
+type uuid: "1"
+
+Ô£¿ MIGRA├ç├âO CONCLU├ìDA! Ô£¿

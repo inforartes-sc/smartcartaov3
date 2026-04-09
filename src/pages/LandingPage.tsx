@@ -30,8 +30,46 @@ import {
   UserCheck,
   Rocket,
   Images,
+  User,
+  ShieldCheck,
   ArrowUp
 } from 'lucide-react';
+
+const PLAN_THEMES: Record<string, any> = {
+  individual: {
+    icon: 'text-slate-400',
+    border: 'border-slate-500/40',
+    btn: 'bg-slate-800 text-slate-300 hover:bg-slate-700',
+    glow: 'shadow-[0_0_30px_rgba(148,163,184,0.08)] group-hover:shadow-[0_0_50px_rgba(148,163,184,0.15)] transition-all'
+  },
+  bronze: {
+    icon: 'text-orange-400',
+    border: 'border-orange-500/40',
+    btn: 'bg-orange-600 text-white hover:bg-orange-500',
+    glow: 'shadow-[0_0_30px_rgba(251,146,60,0.08)] group-hover:shadow-[0_0_50px_rgba(251,146,60,0.15)] transition-all'
+  },
+  silver: {
+    icon: 'text-blue-400',
+    border: 'border-blue-500/60',
+    btn: 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-900/40',
+    glow: 'shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover:shadow-[0_0_70px_rgba(59,130,246,0.3)] transition-all'
+  },
+  gold: {
+    icon: 'text-amber-400',
+    border: 'border-amber-500/40',
+    btn: 'bg-amber-600 text-white hover:bg-amber-500 shadow-amber-900/40',
+    glow: 'shadow-[0_0_30px_rgba(251,191,36,0.08)] group-hover:shadow-[0_0_50px_rgba(251,191,36,0.15)] transition-all'
+  }
+};
+
+const getPlanTheme = (planId: any) => {
+  const idStr = String(planId).toLowerCase();
+  if (idStr === '1' || idStr === 'individual') return PLAN_THEMES.individual;
+  if (idStr === '2' || idStr === 'bronze') return PLAN_THEMES.bronze;
+  if (idStr === '3' || idStr === 'silver') return PLAN_THEMES.silver;
+  if (idStr === '4' || idStr === 'gold') return PLAN_THEMES.gold;
+  return PLAN_THEMES.silver; // Default
+};
 
 export default function LandingPage() {
   const [settings, setSettings] = useState<any>(null);
@@ -61,34 +99,52 @@ export default function LandingPage() {
       
       const defaultPlans = [
         { 
-          id: 'p1', 
-          name: 'Standard', 
+          id: 'individual', 
+          name: 'Individual', 
           price: '49,00', 
-          description: 'Plano Mensal - Ideal para testar o poder das vendas.', 
+          description: 'Ideal para profissionais liberais que buscam presença digital imediata.', 
           features: 'Link Personalizado, Redes Sociais, QR Code Único, Suporte via Ticket, Catálogo Completo', 
+          quota: '1 Cartão',
+          agencies: 'Sem Filiais',
           billing_cycle: 'monthly', 
           months: 1,
           is_popular: false 
         },
         { 
-          id: 'p2', 
-          name: 'Premium', 
+          id: 'bronze', 
+          name: 'Bronze', 
           price: '249,00', 
-          description: 'Plano Semestral - Para quem já vende e quer crescer.', 
-          features: 'Tudo do Standard, 15% de Desconto, Banner Animado, Métricas de Visitas, Suporte Prioritário', 
+          description: 'Plano Semestral focado em pequenas equipes e crescimento acelerado.', 
+          features: 'Tudo do Individual, 15% de Desconto, Banner Animado, Métricas de Visitas, Suporte Prioritário', 
+          quota: '5 Cartões',
+          agencies: 'Até 2 Filiais',
           billing_cycle: 'monthly', 
           months: 6,
           is_popular: false 
         },
         { 
-          id: 'p3', 
-          name: 'Gold', 
-          price: '399,00', 
-          description: 'Plano Anual - Domine o mercado pelo melhor valor.', 
-          features: 'Tudo do Premium, 30% de Desconto, Domínio Próprio, Sem Logo SmartCartão, Suporte VIP 24h', 
+          id: 'silver', 
+          name: 'Silver', 
+          price: '299,00', 
+          description: 'A escolha ideal para empresas em expansão com múltiplas unidades.', 
+          features: 'Tudo do Bronze, Gestão de Equipe, Relatórios Avançados, Selo de Verificado, Suporte VIP 24h', 
+          quota: '15 Cartões',
+          agencies: 'Até 5 Filiais',
           billing_cycle: 'monthly', 
           months: 12,
           is_popular: true 
+        },
+        { 
+          id: 'gold', 
+          name: 'Gold', 
+          price: '399,00', 
+          description: 'Domínio total do mercado com recursos exclusivos e suporte de elite.', 
+          features: 'Tudo do Silver, 30% de Desconto, Domínio Próprio, Sem Logo SmartCartão, Consultoria de Marketing', 
+          quota: 'Ilimitado',
+          agencies: 'Filiais Ilimitadas',
+          billing_cycle: 'monthly', 
+          months: 12,
+          is_popular: false 
         }
       ];
 
@@ -289,21 +345,43 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="fixed inset-0 z-50 bg-white pt-16 px-8 md:hidden"
+              className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-2xl pt-24 px-8 md:hidden"
             >
-              <div className="flex flex-col gap-1 text-center">
-                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="py-4 text-lg font-black text-slate-900 uppercase tracking-tighter">Recursos</a>
-                <a href="#concept" onClick={() => setMobileMenuOpen(false)} className="py-4 text-lg font-black text-slate-900 uppercase tracking-tighter">O que é?</a>
-                <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="py-4 text-lg font-black text-slate-900 uppercase tracking-tighter">Planos</a>
-                
-                <div className="mt-4 pt-4 border-t border-slate-50 flex flex-col gap-8">
-                   <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-lg font-black uppercase text-slate-400 hover:text-blue-600 transition-colors tracking-tighter">Login</Link>
-                   <a href={registerUrl} target="_blank" rel="noopener noreferrer" className="mx-4 bg-blue-600 text-white py-6 rounded-2xl font-black uppercase tracking-widest text-lg shadow-2xl shadow-blue-600/10 active:scale-95 transition-all flex items-center justify-center gap-3">
-                     COMEÇAR AGORA <ArrowRight className="w-6 h-6" />
+               {/* Decorative Background Elements */}
+               <div className="absolute top-20 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[100px] -z-10"></div>
+               <div className="absolute bottom-40 left-0 w-64 h-64 bg-emerald-600/10 rounded-full blur-[100px] -z-10"></div>
+
+               <div className="flex flex-col gap-2 text-center relative z-10">
+                 {['RECURSOS', 'O QUE É?', 'PLANOS'].map((item) => (
+                   <a 
+                     key={item}
+                     href={`#${item.toLowerCase().replace(' ', '-').replace('?', '')}`} 
+                     onClick={() => setMobileMenuOpen(false)} 
+                     className="py-5 text-2xl font-black text-white uppercase tracking-tighter italic hover:text-blue-400 transition-colors"
+                   >
+                     {item}
                    </a>
-                </div>
-              </div>
-          </motion.div>
+                 ))}
+                 
+                 <div className="mt-8 pt-10 border-t border-white/5 flex flex-col gap-10">
+                    <Link 
+                      to="/login" 
+                      onClick={() => setMobileMenuOpen(false)} 
+                      className="text-xl font-black uppercase text-slate-400 hover:text-white transition-colors tracking-widest"
+                    >
+                      Entrar na Plataforma
+                    </Link>
+                    <a 
+                      href={registerUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="mx-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-lg shadow-[0_20px_50px_rgba(37,99,235,0.3)] active:scale-95 transition-all flex items-center justify-center gap-4 border border-white/10 outline outline-1 outline-blue-400/20"
+                    >
+                      COMEÇAR AGORA <ArrowRight className="w-7 h-7" />
+                    </a>
+                 </div>
+               </div>
+           </motion.div>
         )}
       </AnimatePresence>
 
@@ -769,143 +847,86 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-blue-600/5 -z-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-24">
+            <div className="text-center max-w-4xl mx-auto mb-16 transition-all duration-700">
               <h2 className="text-blue-400 text-xs font-black uppercase tracking-[0.3em] mb-6 font-black">Planos de Acesso</h2>
               <h3 className="text-2xl lg:text-5xl font-black text-white tracking-tighter font-heading mb-8 leading-none uppercase italic">
-                 ESCOLHA SEU <br />
-                 <span className="text-blue-400 not-italic">PODER!</span>
+                  ESCOLHA SEU <span className="text-blue-400 not-italic ml-2">PODER!</span>
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {plans.map((plan, i) => {
-                const theme = [
-                  { 
-                    icon: 'text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]',
-                    border: 'border-emerald-500/60',
-                    borderPopular: 'border-emerald-400',
-                    shadow: 'shadow-[0_0_30px_rgba(16,185,129,0.05)]',
-                    shadowPopular: 'shadow-[0_0_60px_rgba(16,185,129,0.2)]',
-                    hover: 'hover:border-emerald-400 hover:shadow-[0_0_60px_rgba(16,185,129,0.2)]',
-                    badgeBg: 'bg-emerald-500 text-white shadow-emerald-900/50',
-                    line: 'bg-emerald-500',
-                    checkBgPop: 'bg-emerald-500 text-white',
-                    checkBgNorm: 'bg-emerald-500/20 text-emerald-400',
-                    btnPop: 'bg-emerald-600 text-white shadow-emerald-900/40 hover:bg-emerald-500',
-                    btnNorm: 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-600 hover:text-white',
-                    discountBadge: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-emerald-900/10'
-                  },
-                  { 
-                    icon: 'text-violet-400 drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]',
-                    border: 'border-violet-500/60',
-                    borderPopular: 'border-violet-400',
-                    shadow: 'shadow-[0_0_30px_rgba(139,92,246,0.05)]',
-                    shadowPopular: 'shadow-[0_0_60px_rgba(139,92,246,0.2)]',
-                    hover: 'hover:border-violet-400 hover:shadow-[0_0_60px_rgba(139,92,246,0.2)]',
-                    badgeBg: 'bg-violet-500 text-white shadow-violet-900/50',
-                    line: 'bg-violet-500',
-                    checkBgPop: 'bg-violet-500 text-white',
-                    checkBgNorm: 'bg-violet-500/20 text-violet-400',
-                    btnPop: 'bg-violet-600 text-white shadow-violet-900/40 hover:bg-violet-500',
-                    btnNorm: 'bg-violet-500/10 text-violet-400 hover:bg-violet-600 hover:text-white',
-                    discountBadge: 'bg-violet-500/10 border-violet-500/20 text-violet-400 shadow-violet-900/10'
-                  },
-                  { 
-                    icon: 'text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]',
-                    border: 'border-blue-500/60',
-                    borderPopular: 'border-blue-400',
-                    shadow: 'shadow-[0_0_30px_rgba(59,130,246,0.05)]',
-                    shadowPopular: 'shadow-[0_0_60px_rgba(59,130,246,0.2)]',
-                    hover: 'hover:border-blue-400 hover:shadow-[0_0_60px_rgba(59,130,246,0.2)]',
-                    badgeBg: 'bg-blue-500 text-white shadow-blue-900/50',
-                    line: 'bg-blue-500',
-                    checkBgPop: 'bg-blue-500 text-white',
-                    checkBgNorm: 'bg-blue-500/20 text-blue-400',
-                    btnPop: 'bg-blue-600 text-white shadow-blue-900/40 hover:bg-blue-500',
-                    btnNorm: 'bg-blue-500/10 text-blue-400 hover:bg-blue-600 hover:text-white',
-                    discountBadge: 'bg-blue-500/10 border-blue-500/20 text-blue-400 shadow-blue-900/10'
-                  }
-                ][i % 3];
-
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+              {plans.map((plan) => {
+                const theme = getPlanTheme(plan.id);
                 return (
-                 <div 
-                  key={plan.id} 
-                  className={`relative p-12 rounded-[3.5rem] border transition-all duration-700 flex flex-col h-full bg-slate-800/40 backdrop-blur-xl ${theme.hover} ${
-                    plan.is_popular 
-                    ? `${theme.borderPopular} ${theme.shadowPopular} z-10` 
-                    : `${theme.border} ${theme.shadow}`
-                  }`}
-                 >
-                  {plan.is_popular && (
-                    <div className={`absolute -top-6 left-1/2 -translate-x-1/2 px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-2xl flex items-center gap-2 ${theme.badgeBg}`}>
-                       <Crown className="w-4 h-4" /> MAIS ESCOLHIDO
+                  <div 
+                    key={plan.id}
+                    className={`group relative p-6 rounded-[2rem] border-2 transition-all duration-700 flex flex-col h-full bg-[#111827]/80 backdrop-blur-xl ${theme.border} ${theme.glow} z-10`}
+                  >
+                    {plan.is_popular && (
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-2xl flex items-center gap-2 z-20">
+                         <Crown className="w-4 h-4" /> RECOMENDADO
+                      </div>
+                    )}
+
+                    <div className="mb-3">
+                       <div className="flex items-center gap-4 mb-4">
+                          <div className="bg-slate-900/60 p-2.5 rounded-xl flex-shrink-0">
+                             {(String(plan.id) === '1' || plan.id === 'individual') && <User className={`w-5 h-5 ${theme.icon}`} />}
+                             {(String(plan.id) === '2' || plan.id === 'bronze') && <Timer className={`w-5 h-5 ${theme.icon}`} />}
+                             {(String(plan.id) === '3' || plan.id === 'silver') && <ShieldCheck className={`w-5 h-5 ${theme.icon}`} />}
+                             {(String(plan.id) === '4' || plan.id === 'gold') && <Crown className={`w-5 h-5 ${theme.icon}`} />}
+                          </div>
+                          <h4 className="text-base md:text-sm font-black text-white tracking-widest uppercase leading-tight">{plan.name}</h4>
+                       </div>
+                     
+                     <div className="text-left pl-1">
+                       <div className="mb-3 w-full bg-emerald-500/10 py-2 rounded-xl border border-emerald-500/40 text-center animate-pulse group-hover:animate-none group-hover:bg-emerald-500/20 transition-all duration-300 shadow-[0_0_15px_rgba(52,211,153,0.1)] text-balance">
+                          <span className="text-[11px] md:text-[9px] font-black text-emerald-400 uppercase tracking-[0.1em] leading-none whitespace-nowrap">
+                             {getS('semiannual_discount', '15')}% OFF Semestral / {getS('annual_discount', '30')}% OFF Anual
+                          </span>
+                       </div>
+                       <div className="flex items-start gap-1 mb-1">
+                          <span className="text-base md:text-sm font-black text-slate-400 mt-1.5 italic">R$</span>
+                          <span className="text-5xl md:text-4xl font-black text-white tracking-tighter italic leading-none">{plan.price}</span>
+                          <span className="text-xs md:text-[10px] font-bold text-slate-500 uppercase tracking-widest self-end pb-1.5">/ {plan.billing_cycle === 'annual' || plan.billing_cycle === 'yearly' ? 'Ano' : 'Mensal'}</span>
+                       </div>
                     </div>
-                  )}
+                    </div>
 
-                  {(() => {
-                    const parsedFeatures = (plan.features || "").split(',').map((f: string) => f.trim());
-                    const discountFeature = parsedFeatures.find((f: string) => f.toLowerCase().includes('desconto'));
-                    const listFeatures = parsedFeatures.filter((f: string) => !f.toLowerCase().includes('desconto'));
+                    <p className="text-sm md:text-xs text-slate-400 font-medium leading-relaxed italic mb-4 border-l-2 border-white/5 pl-4">{plan.description}</p>
 
-                    return (
-                      <>
-                        <div className="mb-10 text-center flex flex-col items-center">
-                          <div className="flex justify-center mb-6">
-                             {plan.months === 12 ? (
-                               <Gem className={`w-12 h-12 ${theme.icon}`} />
-                             ) : plan.months === 6 ? (
-                               <CalendarDays className={`w-12 h-12 ${theme.icon}`} />
-                             ) : (
-                               <Timer className={`w-12 h-12 ${theme.icon}`} />
-                             )}
-                          </div>
-                          
-                          <h4 className="text-xs font-black text-slate-400 tracking-[0.3em] mb-4 uppercase">{plan.name}</h4>
-                          
-                          {/* Highlight Badge ensuring identical height across all cards */}
-                          <div className="h-[28px] mb-6 flex items-center justify-center">
-                            {discountFeature && (
-                              <div className={`inline-flex items-center justify-center border px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.1em] shadow-lg ${theme.discountBadge}`}>
-                                 {discountFeature}
-                              </div>
-                            )}
-                          </div>
+                   <div className="grid grid-cols-2 gap-3 mb-4 shrink-0">
+                      <div className="bg-white/5 border border-white/10 p-2.5 rounded-xl text-center shadow-inner group-hover:border-white/20 transition-all">
+                         <p className="text-[9px] md:text-[8px] font-black text-slate-500 uppercase mb-1">Cota de Uso</p>
+                         <p className="text-base md:text-[11px] font-black text-white uppercase">{plan.quota}</p>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 p-2.5 rounded-xl text-center shadow-inner group-hover:border-white/20 transition-all">
+                         <p className="text-[9px] md:text-[8px] font-black text-slate-500 uppercase mb-1">Filiais</p>
+                         <p className="text-base md:text-[11px] font-black text-white uppercase">{plan.agencies}</p>
+                      </div>
+                   </div>
 
-                          <div className="flex items-center justify-center gap-1 mb-6">
-                            <span className="text-5xl font-black text-white leading-none tracking-tighter italic whitespace-nowrap">R$ {plan.price || '0,00'}</span>
-                            <span className="text-slate-500 font-bold text-xs uppercase tracking-widest whitespace-nowrap">/ {plan.months} meses</span>
-                          </div>
-                          <div className={`h-1 w-12 mx-auto rounded-full mb-8 ${theme.line}`}></div>
-                          <p className="text-slate-400 text-xs font-medium leading-relaxed italic uppercase">{plan.description}</p>
-                        </div>
+                   <div className="space-y-2 mb-6 flex-grow">
+                     {plan.features?.split(',').map((feat: any, idx: number) => (
+                       <div key={idx} className="flex items-center gap-4">
+                         <div className="flex-shrink-0 bg-blue-500/20 p-1.5 rounded-md">
+                            <Check className="w-3.5 h-3.5 text-blue-400" strokeWidth={4} />
+                         </div>
+                         <span className="text-[13px] md:text-[11px] font-bold text-slate-300 uppercase tracking-tight leading-none text-balance">{feat.trim()}</span>
+                       </div>
+                     ))}
+                   </div>
 
-                        <div className="space-y-4 mb-12 flex-grow">
-                          {listFeatures.map((feat: string, idx: number) => (
-                            <div key={idx} className="flex items-start gap-3 text-slate-300">
-                              <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${plan.is_popular ? theme.checkBgPop : theme.checkBgNorm}`}>
-                                <Check className="w-3 h-3" strokeWidth={4} />
-                              </div>
-                              <span className="text-[11px] font-black uppercase tracking-tight leading-relaxed">{feat}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    );
-                  })()}
-
-                   <a 
-                    href={registerUrl}
+                  <a 
+                    href={settings?.register_url || '/register'}
                     target="_blank"
-                    rel="noopener noreferrer" 
-                    className={`w-full py-6 rounded-[2rem] font-black text-center transition-all uppercase tracking-widest text-xs ${
-                      plan.is_popular ? theme.btnPop : theme.btnNorm
-                    }`}
+                    className={`w-full py-4 rounded-xl font-black text-center transition-all uppercase tracking-widest text-[10px] shadow-lg mt-auto ${theme.btn}`}
                   >
                     Ativar Agora
                   </a>
-                 </div>
-                );
-              })}
+                </div>
+              );
+            })}
             </div>
           </div>
         </section>
@@ -954,7 +975,7 @@ export default function LandingPage() {
                            exit={{ opacity: 0, x: -20 }}
                            className="bg-white p-10 rounded-[3rem] shadow-2xl shadow-blue-900/10 border border-slate-100 flex flex-col gap-6 relative group w-full"
                          >
-                            <div className="absolute -top-6 -left-6 w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white text-4xl font-black shadow-xl italic rotate-[-10deg]">
+                            <div className="absolute -top-4 -left-4 w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-xl italic rotate-[-10deg]">
                                "
                             </div>
                             
@@ -1003,23 +1024,23 @@ export default function LandingPage() {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-12 md:py-24 bg-white relative">
+        <section className="pt-12 md:pt-24 pb-8 md:pb-12 bg-white relative">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
                <h2 className="text-slate-300 font-black text-7xl uppercase tracking-tighter opacity-10 absolute left-0 right-0 top-16 select-none pointer-events-none">PERGUNTAS</h2>
                <h3 className="text-3xl lg:text-5xl font-black text-slate-900 font-heading tracking-tighter uppercase leading-none">ESTÁ COM ALGUMA <br /><span className="text-blue-600">DÚVIDA?</span></h3>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-4">
               {faqs.map((faq, i) => (
-                <div key={i} className="bg-slate-50 rounded-[2.5rem] border border-transparent hover:border-slate-100 transition-all overflow-hidden">
+                <div key={i} className="bg-slate-100 rounded-[2rem] border border-slate-200 hover:border-blue-200 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-md">
                   <button 
                     onClick={() => setActiveFaq(activeFaq === i ? null : i)}
-                    className="w-full p-8 text-left flex items-center justify-between group"
+                    className="w-full py-4 px-8 text-left flex items-center justify-between group"
                   >
                     <span className="font-black text-slate-800 group-hover:text-blue-600 transition-colors uppercase tracking-tight text-sm truncate pr-4">{faq.q}</span>
-                    <div className={`p-2 rounded-xl transition-all ${activeFaq === i ? 'bg-blue-600 text-white' : 'bg-white text-slate-300 group-hover:text-slate-600'}`}>
-                       <ChevronDown className={`w-4 h-4 transition-transform duration-500 ${activeFaq === i ? 'rotate-180' : ''}`} />
+                    <div className={`p-2.5 rounded-xl transition-all ${activeFaq === i ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-white text-slate-400 group-hover:text-blue-600 border border-slate-200 shadow-inner'}`}>
+                       <ChevronDown className={`w-4 h-4 transition-transform duration-700 ${activeFaq === i ? 'rotate-180' : ''}`} />
                     </div>
                   </button>
                   <AnimatePresence>
@@ -1030,8 +1051,9 @@ export default function LandingPage() {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="p-8 pt-0 text-slate-500 font-medium leading-relaxed italic text-sm">
-                          {faq.a}
+                        <div className="p-8 pt-0 text-slate-600 font-medium leading-relaxed italic text-sm">
+                           <div className="h-px w-12 bg-blue-100 mb-6"></div>
+                           {faq.a}
                         </div>
                       </motion.div>
                     )}
@@ -1043,15 +1065,14 @@ export default function LandingPage() {
         </section>
 
         {/* Final CTA */}
-        <section className="py-16 md:py-32 bg-white relative overflow-hidden">
+        <section className="pt-8 md:pt-12 pb-16 md:pb-32 bg-white relative overflow-hidden">
            <div className="max-w-7xl mx-auto px-4 relative z-10">
               <div className="bg-slate-900 rounded-[2.5rem] md:rounded-[4rem] p-10 md:p-24 text-center relative overflow-hidden shadow-[0_40px_80px_-20px_rgba(15,23,42,0.15)]">
                  <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] -z-10"></div>
                  <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] -z-10"></div>
                  
                  <h2 className="text-2xl lg:text-4xl font-black text-white mb-8 tracking-tighter leading-none uppercase italic text-balance">
-                    {ctaTitleFirst} <br />
-                    <span className="text-blue-500 not-italic underline decoration-blue-500/30 decoration-8 underline-offset-8">{ctaTitleLast}</span>
+                    {ctaTitleFirst} <span className="text-blue-500 not-italic underline decoration-blue-500/30 decoration-8 underline-offset-8 ml-2">{ctaTitleLast}</span>
                  </h2>
                  <p className="text-slate-400 text-lg lg:text-xl mb-14 max-w-2xl mx-auto font-medium">
                     {getS('landing_cta_subtitle', 'Você está a 5 minutes de ter uma presença digital que vende por você 24 horas por dia.')}

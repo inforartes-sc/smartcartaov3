@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { uploadImage } from '../lib/supabase';
-import { motion } from 'motion/react';
-import { Plus, Trash2, Package, Camera, Loader2, Edit2, X, Check, Copy, Calculator, Search, Home as HomeIcon, MapPin, Maximize, Bed, Bath, Car, ArrowRightLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Plus, Trash2, Package, Camera, Loader2, Edit2, X, Check, Copy, 
+  Calculator, Search, Home as HomeIcon, MapPin, Maximize, Bed, 
+  Bath, Car, ArrowRightLeft, ShieldCheck, Star 
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminProducts() {
@@ -12,8 +16,11 @@ export default function AdminProducts() {
   const [submitting, setSubmitting] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [newColor, setNewColor] = useState('#000000');
+  const [newColor, setNewColor] = useState('#2563eb');
   const [confirmConfig, setConfirmConfig] = useState<{ isOpen: boolean; title: string; onConfirm: () => void } | null>(null);
+  const [priceModal, setPriceModal] = useState<{ isOpen: boolean; productId: string | number; currentPrice: string } | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const { user } = useAuth();
   const userNiche = user?.niche || 'vehicle';
@@ -50,7 +57,7 @@ export default function AdminProducts() {
     name: '',
     image: '',
     description: '',
-    colors: ['#000000'] as string[],
+    colors: [] as string[],
     images: [] as string[],
     consortium_image: '',
     liberacred_image: '',
@@ -88,12 +95,28 @@ export default function AdminProducts() {
     condo_fee: '',
     iptu: '',
     map_url: '',
-    video_url: ''
+    video_url: '',
+    show_on_branches: true
   });
 
   const [newPlan, setNewPlan] = useState({ installments: 0, value: '' });
   const [newFinancingPlan, setNewFinancingPlan] = useState({ down_payment: '', installments: 0, value: '' });
-  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch('/api/products');
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image' | 'consortium_image' | 'liberacred_image') => {
     try {
@@ -132,156 +155,6 @@ export default function AdminProducts() {
     }));
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      const res = await fetch('/api/products');
-      const data = await res.json();
-      setProducts(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Error fetching products:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (uploading || submitting) return;
-
-    setSubmitting(true);
-    try {
-      const url = editingId ? `/api/products/${editingId}` : '/api/products';
-      const method = editingId ? 'PUT' : 'POST';
-
-      const submissionData = {
-        ...formState,
-        card_installments: formState.card_installments ? `${formState.card_installments.replace('x', '')}x` : '',
-        card_interest: !!formState.card_interest
-      };
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submissionData),
-      });
-
-      if (res.ok) {
-        toast.success(editingId ? 'Produto atualizado!' : 'Produto salvo!');
-        closeForm();
-        fetchProducts();
-      } else {
-        const errorData = await res.json();
-        toast.error(errorData.error || 'Erro ao salvar produto');
-      }
-    } catch (err) {
-      toast.error('Erro de conexão ao salvar');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEdit = (product: any) => {
-    setEditingId(product.id);
-    setFormState({
-      name: product.name,
-      image: product.image,
-      description: product.description,
-      colors: typeof product.colors === 'string' ? JSON.parse(product.colors) : (product.colors || ['#000000']),
-      images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || []),
-      consortium_image: product.consortium_image || '',
-      liberacred_image: product.liberacred_image || '',
-      has_liberacred: !!product.has_liberacred,
-      has_consortium: product.has_consortium !== undefined ? !!product.has_consortium : true,
-      is_highlighted: !!product.is_highlighted,
-      year: product.year || '',
-      price: product.price || '',
-      mileage: product.mileage || '',
-      brand: product.brand || '',
-      condition: product.condition || 'Novo',
-      fuel: product.fuel || 'Flex',
-      transmission: product.transmission || 'Manual',
-      color: product.color || '',
-      optionals: typeof product.optionals === 'string' ? JSON.parse(product.optionals) : (product.optionals || []),
-      show_consortium_plans: !!product.show_consortium_plans,
-      consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || []),
-      show_financing_plans: !!product.show_financing_plans,
-      financing_plans: typeof product.financing_plans === 'string' ? JSON.parse(product.financing_plans) : (product.financing_plans || []),
-      cash_price: product.cash_price || '',
-      card_installments: (product.card_installments || '').replace('x', ''),
-      card_interest: product.card_interest === true || product.card_interest === 1 || String(product.card_interest) === 'true',
-      is_active: product.is_active !== false,
-      niche: product.niche || 'vehicle',
-      property_type: product.property_type || 'Casa',
-      property_status: product.property_status || 'ready',
-      bedrooms: product.bedrooms || '',
-      bathrooms: product.bathrooms || '',
-      suites: product.suites || '',
-      parking_spaces: product.parking_spaces || '',
-      area: product.area || '',
-      location: product.location || '',
-      is_for_sale: product.is_for_sale !== false,
-      is_for_rent: !!product.is_for_rent,
-      condo_fee: product.condo_fee || '',
-      iptu: product.iptu || '',
-      map_url: product.map_url || '',
-      video_url: product.video_url || ''
-    });
-    setShowAddForm(true);
-  };
-
-  const handleDuplicate = (product: any) => {
-    setEditingId(null);
-    setFormState({
-      name: `${product.name} (Cópia)`,
-      image: product.image,
-      description: product.description,
-      colors: typeof product.colors === 'string' ? JSON.parse(product.colors) : (product.colors || ['#000000']),
-      images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || []),
-      consortium_image: product.consortium_image || '',
-      liberacred_image: product.liberacred_image || '',
-      has_liberacred: !!product.has_liberacred,
-      has_consortium: product.has_consortium !== undefined ? !!product.has_consortium : true,
-      is_highlighted: !!product.is_highlighted,
-      year: product.year || '',
-      price: product.price || '',
-      mileage: product.mileage || '',
-      brand: product.brand || '',
-      condition: product.condition || 'Novo',
-      fuel: product.fuel || 'Flex',
-      transmission: product.transmission || 'Manual',
-      color: product.color || '',
-      optionals: typeof product.optionals === 'string' ? JSON.parse(product.optionals) : (product.optionals || []),
-      show_consortium_plans: !!product.show_consortium_plans,
-      consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || []),
-      show_financing_plans: !!product.show_financing_plans,
-      financing_plans: typeof product.financing_plans === 'string' ? JSON.parse(product.financing_plans) : (product.financing_plans || []),
-      cash_price: product.cash_price || '',
-      card_installments: (product.card_installments || '').replace('x', ''),
-      card_interest: product.card_interest === true || product.card_interest === 1 || String(product.card_interest) === 'true',
-      is_active: product.is_active !== false,
-      niche: product.niche || 'vehicle',
-      property_type: product.property_type || 'Casa',
-      property_status: product.property_status || 'ready',
-      bedrooms: product.bedrooms || '',
-      bathrooms: product.bathrooms || '',
-      suites: product.suites || '',
-      parking_spaces: product.parking_spaces || '',
-      area: product.area || '',
-      location: product.location || '',
-      is_for_sale: product.is_for_sale !== false,
-      is_for_rent: !!product.is_for_rent,
-      condo_fee: product.condo_fee || '',
-      iptu: product.iptu || '',
-      map_url: product.map_url || '',
-      video_url: product.video_url || ''
-    });
-    setShowAddForm(true);
-  };
-
   const closeForm = () => {
     setShowAddForm(false);
     setEditingId(null);
@@ -289,7 +162,7 @@ export default function AdminProducts() {
       name: '',
       image: '',
       description: '',
-      colors: ['#000000'],
+      colors: [],
       images: [],
       consortium_image: '',
       liberacred_image: '',
@@ -327,7 +200,8 @@ export default function AdminProducts() {
       condo_fee: '',
       iptu: '',
       map_url: '',
-      video_url: ''
+      video_url: '',
+      show_on_branches: true
     });
     setNewPlan({ installments: 0, value: '' });
     setNewFinancingPlan({ down_payment: '', installments: 0, value: '' });
@@ -339,9 +213,36 @@ export default function AdminProducts() {
         setFormState({ ...formState, price: "" });
         return;
     }
-    const options = { minimumFractionDigits: 2 };
-    const result = new Intl.NumberFormat('pt-BR', options).format(parseFloat(value) / 100);
+    const result = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(parseFloat(value) / 100);
     setFormState({ ...formState, price: result });
+  };
+
+  const handlePlanValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value === "") {
+        setNewPlan({ ...newPlan, value: "" });
+        return;
+    }
+    const result = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(parseFloat(value) / 100);
+    setNewPlan({ ...newPlan, value: result });
+  };
+
+  const handleFinancingDownPaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    const result = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(parseFloat(value) / 100);
+    setNewFinancingPlan({ ...newFinancingPlan, down_payment: value === "" ? "" : result });
+  };
+
+  const handleFinancingValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    const result = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(parseFloat(value) / 100);
+    setNewFinancingPlan({ ...newFinancingPlan, value: value === "" ? "" : result });
+  };
+
+  const handleCashPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    const result = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(parseFloat(value) / 100);
+    setFormState({ ...formState, cash_price: value === "" ? "" : result });
   };
 
   const handleCardInstallmentsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -366,34 +267,6 @@ export default function AdminProducts() {
     }));
   };
 
-  const handlePlanValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-    if (value === "") {
-        setNewPlan({ ...newPlan, value: "" });
-        return;
-    }
-    const result = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(parseFloat(value) / 100);
-    setNewPlan({ ...newPlan, value: result });
-  };
-
-  const handleCashPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-    const result = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(parseFloat(value) / 100);
-    setFormState({ ...formState, cash_price: value === "" ? "" : result });
-  };
-
-  const handleFinancingDownPaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-    const result = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(parseFloat(value) / 100);
-    setNewFinancingPlan({ ...newFinancingPlan, down_payment: value === "" ? "" : result });
-  };
-
-  const handleFinancingValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-    const result = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(parseFloat(value) / 100);
-    setNewFinancingPlan({ ...newFinancingPlan, value: value === "" ? "" : result });
-  };
-
   const addFinancingPlan = () => {
     if (newFinancingPlan.installments > 0 && newFinancingPlan.value && newFinancingPlan.down_payment) {
       setFormState(prev => ({
@@ -411,816 +284,542 @@ export default function AdminProducts() {
     }));
   };
 
-  const addColor = () => {
-    if (!formState.colors.includes(newColor)) {
-      setFormState(prev => ({ ...prev, colors: [...prev.colors, newColor] }));
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const url = editingId ? `/api/products/${editingId}` : '/api/products';
+      const method = editingId ? 'PUT' : 'POST';
+      console.log('[ADMIN-SUBMIT] Sending form state:', formState);
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formState)
+      });
+      if (res.ok) {
+        toast.success('Salvo!');
+        closeForm();
+        fetchProducts();
+      } else {
+        toast.error('Erro ao salvar');
+      }
+    } catch (err) {
+      toast.error('Erro de conexão');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const removeColor = (colorToRemove: string) => {
-    setFormState(prev => ({ ...prev, colors: prev.colors.filter(c => c !== colorToRemove) }));
-  };
-
-  const handleDeleteProduct = (id: number) => {
-    setConfirmConfig({
-      isOpen: true,
-      title: 'Tem certeza que deseja excluir este produto?',
-      onConfirm: async () => {
-        try {
-          const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-          if (res.ok) {
-            toast.success('Produto excluído');
-            fetchProducts();
-          }
-        } catch (err) {
-          toast.error('Erro ao excluir produto');
-        }
-        setConfirmConfig(null);
-      }
+  const handleEdit = (product: any) => {
+    setEditingId(product.id);
+    setFormState({
+      ...product,
+      colors: typeof product.colors === 'string' ? JSON.parse(product.colors) : (product.colors || []),
+      images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || []),
+      optionals: typeof product.optionals === 'string' ? JSON.parse(product.optionals) : (product.optionals || []),
+      consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || []),
+      financing_plans: typeof product.financing_plans === 'string' ? JSON.parse(product.financing_plans) : (product.financing_plans || []),
+      show_on_branches: product.show_on_branches !== false
     });
+    setShowAddForm(true);
   };
 
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center p-20 text-gray-400">
-      <Loader2 className="w-10 h-10 animate-spin mb-4" />
-      <p>Carregando seu catálogo...</p>
-    </div>
-  );
+  const handleDeleteProduct = async (id: number) => {
+    try {
+      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success('Excluído!');
+        fetchProducts();
+        setShowDeleteConfirm(null);
+      }
+    } catch (err) {
+      toast.error('Erro ao excluir');
+    }
+  };
+
+  if (loading) return <div className="p-20 text-center font-bold text-gray-400">CARREGANDO...</div>;
 
   return (
-    <div className="max-w-4xl animate-in fade-in duration-500">
-      <div className="flex items-center justify-between mb-8">
+    <div className="w-full">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 font-heading">Gerenciar Catálogo</h1>
-          <p className="text-gray-500">Adicione e edite os produtos que aparecem no seu cartão.</p>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Gerenciar Catálogo</h2>
+          <p className="text-gray-500 text-sm mt-1 uppercase tracking-widest font-bold opacity-60">Seu inventário completo de produtos</p>
         </div>
-        <button
-          onClick={() => { closeForm(); setShowAddForm(true); }}
-          className="bg-[#003da5] hover:bg-[#002b75] text-white font-bold py-3 px-6 rounded-2xl transition-all flex items-center gap-2 shadow-lg shadow-blue-100"
-        >
-          <Plus className="w-5 h-5" />
-          Novo Produto
-        </button>
-      </div>
-
-      <div className="mb-8 p-6 bg-white rounded-3xl border border-gray-100 flex items-center gap-4 group transition-all hover:shadow-lg hover:shadow-blue-50">
-        <div className="p-2 bg-blue-50 rounded-xl text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
-          <Search className="w-5 h-5" />
-        </div>
-        <input
-          type="text"
-          placeholder="Buscar no seu catálogo..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 bg-transparent border-none outline-none font-medium text-gray-700 placeholder:text-gray-400"
-        />
-        {searchTerm && (
-          <button 
-            onClick={() => setSearchTerm('')}
-            className="p-1 px-3 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] font-black uppercase text-gray-500 transition-all"
-          >
-            Limpar
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Buscar por nome..." 
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)} 
+              className="w-64 h-12 pl-10 pr-4 bg-white border border-gray-100 rounded-xl outline-none focus:border-blue-200 shadow-sm transition-all" 
+            />
+          </div>
+          <button onClick={() => setShowAddForm(true)} className="flex items-center justify-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
+            <Plus className="w-5 h-5" /> Novo Item
           </button>
-        )}
+        </div>
       </div>
 
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-4xl max-h-[95vh] overflow-y-auto rounded-[2rem] shadow-2xl p-8 scrollbar-hide">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 font-heading">
-                {editingId ? 'Editar Produto' : 'Adicionar Produto'}
-              </h2>
-              <button onClick={closeForm} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <X className="w-6 h-6 text-gray-400" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">{userNiche === 'realestate' ? 'Título do Imóvel *' : 'Nome do Veículo *'}</label>
-                <input
-                  type="text"
-                  required
-                  value={formState.name}
-                  onChange={(e) => setFormState({ ...formState, name: e.target.value })}
-                  className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
-                  placeholder={userNiche === 'realestate' ? "Ex: Apartamento no Centro" : "Ex: KM-HAKA"}
-                />
-              </div>
-
-              {/* Informações do Veículo / Imóvel */}
-              <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100 space-y-6">
-                <div className="flex items-center gap-2 mb-2">
-                  {userNiche === 'realestate' ? <HomeIcon className="w-5 h-5 text-gray-400" /> : <Edit2 className="w-5 h-5 text-gray-400" />}
-                  <h3 className="text-lg font-bold text-gray-800">{userNiche === 'realestate' ? 'Detalhes do Imóvel' : 'Informações do Veículo'}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+        {products
+          .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+          .map((product) => (
+            <motion.div 
+              layout
+              key={product.id} 
+              className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden group hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-500 flex flex-col"
+            >
+              <div className="relative h-48 lg:h-56 bg-gray-50 overflow-hidden">
+                <img src={product.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={product.name} />
+                <div className="absolute top-4 right-4 flex flex-col gap-2">
+                  <button onClick={() => setShowDeleteConfirm(product.id)} className="p-2 bg-white/80 backdrop-blur-md text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => handleEdit(product)} className="p-2 bg-white/80 backdrop-blur-md text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Edit2 className="w-4 h-4" /></button>
                 </div>
-                
-                {userNiche === 'vehicle' ? (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Ano</label>
-                        <input
-                          type="text"
-                          value={formState.year}
-                          onChange={(e) => setFormState({ ...formState, year: e.target.value })}
-                          placeholder="Ex: 2026"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Preço (R$)</label>
-                        <input
-                          type="text"
-                          value={formState.price}
-                          onChange={handlePriceChange}
-                          placeholder="0,00"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Quilometragem (km)</label>
-                        <input
-                          type="text"
-                          value={formState.mileage}
-                          onChange={(e) => setFormState({ ...formState, mileage: e.target.value })}
-                          placeholder="Opcional"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Marca</label>
-                        <input
-                          type="text"
-                          value={formState.brand}
-                          onChange={(e) => setFormState({ ...formState, brand: e.target.value })}
-                          placeholder="Ex: Mobtec"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Condição</label>
-                        <select
-                          value={formState.condition}
-                          onChange={(e) => setFormState({ ...formState, condition: e.target.value })}
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
-                        >
-                          <option value="Novo">Novo</option>
-                          <option value="Seminovo">Seminovo</option>
-                          <option value="Usado">Usado</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Combustível</label>
-                        <select
-                          value={formState.fuel}
-                          onChange={(e) => setFormState({ ...formState, fuel: e.target.value })}
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
-                        >
-                          <option value="Gasolina">Gasolina</option>
-                          <option value="Etanol">Etanol</option>
-                          <option value="Flex">Flex</option>
-                          <option value="Diesel">Diesel</option>
-                          <option value="Elétrico">Elétrico</option>
-                          <option value="Híbrido">Híbrido</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Tipo de Imóvel</label>
-                        <select
-                          value={formState.property_type}
-                          onChange={(e) => setFormState({ ...formState, property_type: e.target.value })}
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
-                        >
-                          {PROPERTY_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Status do Imóvel</label>
-                        <select
-                          value={formState.property_status}
-                          onChange={(e) => setFormState({ ...formState, property_status: e.target.value })}
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
-                        >
-                          <option value="ready">Pronto</option>
-                          <option value="building">Em Construção</option>
-                          <option value="launch">Lançamento</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Preço (R$)</label>
-                        <input
-                          type="text"
-                          value={formState.price}
-                          onChange={handlePriceChange}
-                          placeholder="0,00"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase flex items-center gap-1"><Maximize className="w-3 h-3" /> Área (m²)</label>
-                        <input
-                          type="number"
-                          value={formState.area}
-                          onChange={(e) => setFormState({ ...formState, area: e.target.value })}
-                          placeholder="Ex: 120"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase flex items-center gap-1"><Bed className="w-3 h-3" /> Quartos</label>
-                        <input
-                          type="number"
-                          value={formState.bedrooms}
-                          onChange={(e) => setFormState({ ...formState, bedrooms: e.target.value })}
-                          placeholder="0"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase flex items-center gap-1"><Bath className="w-3 h-3" /> Banheiros</label>
-                        <input
-                          type="number"
-                          value={formState.bathrooms}
-                          onChange={(e) => setFormState({ ...formState, bathrooms: e.target.value })}
-                          placeholder="0"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase flex items-center gap-1"><Check className="w-3 h-3" /> Suítes</label>
-                        <input
-                          type="number"
-                          value={formState.suites}
-                          onChange={(e) => setFormState({ ...formState, suites: e.target.value })}
-                          placeholder="0"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase flex items-center gap-1"><Car className="w-3 h-3" /> Vagas</label>
-                        <input
-                          type="number"
-                          value={formState.parking_spaces}
-                          onChange={(e) => setFormState({ ...formState, parking_spaces: e.target.value })}
-                          placeholder="0"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase flex items-center gap-1"><MapPin className="w-3 h-3" /> Localização / Bairro</label>
-                        <input
-                          type="text"
-                          value={formState.location}
-                          onChange={(e) => setFormState({ ...formState, location: e.target.value })}
-                          placeholder="Ex: Adrianópolis, Manaus"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase flex items-center gap-1"><MapPin className="w-3 h-3" /> Link do Google Maps (Opcional)</label>
-                        <input
-                          type="url"
-                          value={formState.map_url}
-                          onChange={(e) => setFormState({ ...formState, map_url: e.target.value })}
-                          placeholder="https://goo.gl/maps/..."
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2 p-3 bg-white border border-gray-100 rounded-xl">
-                        <input
-                          type="checkbox"
-                          id="is_for_sale"
-                          checked={formState.is_for_sale}
-                          onChange={(e) => setFormState({ ...formState, is_for_sale: e.target.checked })}
-                          className="w-5 h-5 text-blue-600 rounded"
-                        />
-                        <label htmlFor="is_for_sale" className="text-xs font-bold text-gray-600 uppercase">Disponível para Venda</label>
-                      </div>
-                      <div className="flex items-center gap-2 p-3 bg-white border border-gray-100 rounded-xl">
-                        <input
-                          type="checkbox"
-                          id="is_for_rent"
-                          checked={formState.is_for_rent}
-                          onChange={(e) => setFormState({ ...formState, is_for_rent: e.target.checked })}
-                          className="w-5 h-5 text-blue-600 rounded"
-                        />
-                        <label htmlFor="is_for_rent" className="text-xs font-bold text-gray-600 uppercase">Disponível para Aluguel</label>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Capa do Produto</label>
-                  <div className="relative h-40 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden group transition-colors hover:border-blue-300">
-                    {formState.image ? (
-                      <img src={formState.image} className="w-full h-full object-contain p-2" alt="Preview" />
-                    ) : (
-                      <Camera className="w-10 h-10 text-gray-300" />
-                    )}
-                    <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity backdrop-blur-[2px]">
-                      <span className="bg-white/20 px-4 py-2 rounded-full font-bold text-sm backdrop-blur-md">Alterar</span>
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'image')} />
-                    </label>
-                    {uploading && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-bold text-gray-700 uppercase tracking-wider">Tabela Consórcio</label>
-                    <button
-                      type="button"
-                      onClick={() => setFormState(prev => ({ ...prev, has_consortium: !prev.has_consortium }))}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formState.has_consortium ? 'bg-emerald-500' : 'bg-gray-200'}`}
-                    >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formState.has_consortium ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
-                  </div>
-                  <div className={`relative h-40 bg-gray-50 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center overflow-hidden group transition-all ${
-                    formState.has_consortium ? 'border-gray-200 hover:border-blue-300' : 'border-red-200 opacity-50 grayscale'
-                  }`}>
-                    {formState.consortium_image ? (
-                      <img src={formState.consortium_image} className="w-full h-full object-contain p-2" alt="Preview" />
-                    ) : (
-                      <Camera className="w-10 h-10 text-gray-300" />
-                    )}
-                    <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity backdrop-blur-[2px]">
-                      <span className="bg-white/20 px-4 py-2 rounded-full font-bold text-sm backdrop-blur-md">Alterar</span>
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'consortium_image')} />
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <label className="block text-sm font-bold text-gray-700 uppercase tracking-wider">Galeria de Imagens (Até 5)</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {formState.images.map((img, idx) => (
-                    <div key={idx} className="relative aspect-square bg-gray-50 rounded-xl overflow-hidden border border-gray-100 group">
-                      <img src={img} className="w-full h-full object-cover" alt={`Gallery ${idx}`} />
-                      <button 
-                        type="button"
-                        onClick={() => removeGalleryImage(idx)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {formState.images.length < 5 && (
-                    <label className="aspect-square bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:border-blue-300 transition-colors">
-                      <Plus className="w-6 h-6 text-gray-300" />
-                      <span className="text-[10px] text-gray-400 font-bold mt-1">Adicionar</span>
-                      <input type="file" className="hidden" accept="image/*" onChange={handleGalleryUpload} />
-                    </label>
+                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  {product.is_highlighted && (
+                    <span className="px-3 py-1 bg-amber-400 text-amber-900 text-[10px] font-black uppercase rounded-lg shadow-lg flex items-center gap-1.5 border border-amber-300 backdrop-blur-sm">
+                      <Star className="w-3 h-3 fill-amber-900" /> Em Destaque
+                    </span>
+                  )}
+                  {product.is_inherited ? (
+                    <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg shadow-lg border border-blue-500">Herdado</span>
+                  ) : (
+                    <span className="px-3 py-1 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-lg shadow-lg border border-emerald-400">Local</span>
                   )}
                 </div>
               </div>
 
-              {/* Seção Plano de Consórcio Detalhado */}
-              <div className="bg-purple-50/50 p-6 rounded-3xl border border-purple-100 space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calculator className="w-5 h-5 text-purple-600" />
-                    <h3 className="text-lg font-bold text-gray-800">Planos de Consórcio</h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">Habilitar Planos</span>
-                    <button
-                      type="button"
-                      onClick={() => setFormState(prev => ({ ...prev, show_consortium_plans: !prev.show_consortium_plans }))}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formState.show_consortium_plans ? 'bg-purple-600' : 'bg-gray-200'}`}
-                    >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formState.show_consortium_plans ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
-                  </div>
+              <div className="p-6 flex-1 flex flex-col">
+                <h3 className="font-black text-gray-900 uppercase tracking-tight truncate mb-1 group-hover:text-blue-600 transition-colors uppercase">{product.name}</h3>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-blue-600 font-black text-xl">R$ {product.price}</span>
+                  {product.year && <span className="text-[10px] font-black text-gray-400 uppercase bg-gray-100 px-2 py-0.5 rounded-md">{product.year}</span>}
                 </div>
 
-                {formState.show_consortium_plans && (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="space-y-3">
-                      {formState.consortium_plans.map((plan, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-4 bg-white border border-purple-100 rounded-2xl shadow-sm">
-                          <div className="flex items-center gap-4">
-                            <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold">{plan.installments}x</span>
-                            <span className="text-gray-700 font-medium">de <span className="text-purple-700 font-bold">R$ {plan.value}</span> /mês</span>
-                          </div>
-                          <button 
-                            type="button" 
-                            onClick={() => removePlan(idx)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors border-none bg-transparent"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="p-4 bg-white border border-dashed border-purple-200 rounded-2xl flex flex-wrap items-center gap-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase ml-1">Quantidade</span>
-                        <input
-                          type="number"
-                          value={newPlan.installments || ''}
-                          onChange={(e) => setNewPlan({ ...newPlan, installments: parseInt(e.target.value) || 0 })}
-                          placeholder="Qtd"
-                          className="w-24 px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-center font-bold"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase ml-1">Valor da Parcela</span>
-                        <input
-                          type="text"
-                          value={newPlan.value}
-                          onChange={handlePlanValueChange}
-                          placeholder="0,00"
-                          className="w-32 px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-bold"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={addPlan}
-                        className="mt-5 px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase hover:bg-purple-700 transition-colors shadow-lg shadow-purple-100"
-                      >
-                        + Add Plano
-                      </button>
-                    </div>
+                <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+                  <button 
+                    onClick={() => product.is_inherited ? setPriceModal({ isOpen: true, productId: product.id, currentPrice: product.price || '' }) : handleEdit(product)}
+                    className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase hover:text-blue-700 transition-all group/btn"
+                  >
+                    {product.is_inherited ? <><ArrowRightLeft className="w-3 h-3" /> Preço Local</> : <><Edit2 className="w-3 h-3" /> Detalhes</>}
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={async () => {
+                        const newStatus = product.is_active === false ? true : false;
+                        const res = await fetch(product.is_inherited ? '/api/products/toggle' : `/api/products/${product.id}`, {
+                          method: product.is_inherited ? 'POST' : 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(product.is_inherited ? { productId: product.id, isActive: newStatus } : { is_active: newStatus })
+                        });
+                        if (res.ok) { 
+                          toast.success(newStatus ? 'Produto Ativado' : 'Produto Oculto');
+                          fetchProducts(); 
+                        }
+                      }}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 ${product.is_active !== false ? 'bg-emerald-500 shadow-md shadow-emerald-100' : 'bg-gray-200'}`}
+                    >
+                       <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform duration-300 ${product.is_active !== false ? 'translate-x-5' : 'translate-x-1'}`} />
+                    </button>
+                    <span className={`text-[9px] font-black uppercase ${product.is_active !== false ? 'text-emerald-600' : 'text-gray-400'}`}>
+                      {product.is_active !== false ? 'Ativo' : 'Oculto'}
+                    </span>
                   </div>
-                )}
+                </div>
               </div>
-              
-              {/* Seção Plano de Financiamento */}
-              <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100 space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calculator className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-lg font-bold text-gray-800">Planos de Financiamento</h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Habilitar Planos</span>
-                    <button
-                      type="button"
-                      onClick={() => setFormState(prev => ({ ...prev, show_financing_plans: !prev.show_financing_plans }))}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formState.show_financing_plans ? 'bg-blue-600' : 'bg-gray-200'}`}
-                    >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formState.show_financing_plans ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
-                  </div>
-                </div>
+            </motion.div>
+          ))}
+      </div>
 
-                {formState.show_financing_plans && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase text-blue-600">Valor à Vista</label>
-                        <input
-                          type="text"
-                          value={formState.cash_price}
-                          onChange={handleCashPriceChange}
-                          placeholder="R$ 0,00"
-                          className="w-full px-4 py-2.5 bg-white border border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-blue-700"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase text-blue-600">Parcelas Cartão</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={formState.card_installments}
-                            onChange={handleCardInstallmentsChange}
-                            placeholder="Ex: 10"
-                            className="w-full px-4 py-2.5 bg-white border border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all pr-8"
-                          />
-                          {formState.card_installments && (
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">x</span>
-                          )}
+      <AnimatePresence>
+        {showAddForm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl md:rounded-[2.5rem] w-full max-w-6xl max-h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl relative"
+            >
+              <div className="p-5 md:p-8 border-b border-gray-50 flex items-center justify-between bg-white z-10 shrink-0">
+                <h2 className="text-xl md:text-2xl font-black text-gray-900 uppercase">{editingId ? 'Editar Produto' : 'Novo Produto'}</h2>
+                <button onClick={closeForm} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="w-6 h-6 text-gray-400" /></button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 md:p-8 space-y-6 md:space-y-8 scrollbar-hide">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                  {/* Nome do Item */}
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Nome do Item *</label>
+                    <input type="text" required value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} className="w-full h-14 px-5 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-bold text-lg transition-all" />
+                  </div>
+
+                  {/* Especificações (Ano, Preço, KM / Área) */}
+                  <div className="bg-gray-50/50 p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-gray-100 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                    {userNiche === 'vehicle' ? (
+                      <>
+                    <div className="col-span-1">
+                      <label className="block text-[9px] font-black text-gray-400 uppercase">Ano</label>
+                      <input type="text" value={formState.year} onChange={e => setFormState({...formState, year: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all" />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-[9px] font-black text-gray-400 uppercase">Preço</label>
+                      <input type="text" value={formState.price} onChange={handlePriceChange} className="w-full h-12 px-4 bg-white border border-blue-200 rounded-xl shadow-sm text-blue-600 font-bold focus:border-blue-500 outline-none transition-all" />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-[9px] font-black text-gray-400 uppercase">KM</label>
+                      <input type="text" value={formState.mileage} onChange={e => setFormState({...formState, mileage: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all" />
+                    </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="col-span-1">
+                          <label className="block text-[9px] font-black text-gray-400 uppercase">Área m²</label>
+                          <input type="text" value={formState.area} onChange={e => setFormState({...formState, area: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all" />
                         </div>
-                      </div>
-                      <div className="flex items-center pt-5">
-                        <label className="flex items-center gap-2 cursor-pointer group">
-                          <input
-                            type="checkbox"
-                            checked={formState.card_interest}
-                            onChange={(e) => setFormState({ ...formState, card_interest: e.target.checked })}
-                            className="w-5 h-5 text-blue-600 focus:ring-blue-500 border-blue-200 rounded-lg cursor-pointer"
-                          />
-                          <span className="text-xs font-bold text-gray-500 group-hover:text-blue-600 transition-colors uppercase select-none">Com Juros</span>
+                        <div className="col-span-1">
+                          <label className="block text-[9px] font-black text-gray-400 uppercase">Preço</label>
+                          <input type="text" value={formState.price} onChange={handlePriceChange} className="w-full h-12 px-4 bg-white border border-blue-200 rounded-xl shadow-sm text-blue-600 font-bold focus:border-blue-500 outline-none transition-all" />
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Descrição - Full Width */}
+                  <div className="lg:col-span-2">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Descrição</label>
+                    <textarea value={formState.description} onChange={e => setFormState({...formState, description: e.target.value})} className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl h-40 resize-none text-sm shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" />
+                  </div>
+
+                  {/* Capa e Galeria - Lado a Lado */}
+                  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase">Capa</label>
+                      <div className="relative h-40 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center overflow-hidden group">
+                        {formState.image ? <img src={formState.image} className="w-full h-full object-contain" alt="C" /> : <Camera className="w-8 h-8 text-gray-200" />}
+                        <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
+                          <span className="text-[10px] font-bold">Alterar</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, 'image')} />
                         </label>
                       </div>
                     </div>
-
-                    <div className="space-y-3">
-                      <label className="block text-sm font-bold text-gray-700 uppercase tracking-tight">Opções de Financiamento</label>
-                      {formState.financing_plans.map((plan, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-4 bg-white border border-blue-100 rounded-2xl shadow-sm">
-                          <div className="flex flex-wrap items-center gap-4">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase">Entrada:</span>
-                              <span className="text-blue-700 font-bold">R$ {plan.down_payment}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase">Restante:</span>
-                              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">{plan.installments}x</span>
-                              <span className="text-gray-700 font-medium font-heading">de <span className="text-blue-700 font-bold">R$ {plan.value}</span> /mês</span>
-                            </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase">Galeria</label>
+                      <div className="grid grid-cols-3 gap-2 h-40 bg-gray-50 p-2 rounded-2xl">
+                        {formState.images.map((img, i) => (
+                          <div key={i} className="relative rounded-lg overflow-hidden group">
+                            <img src={img} className="w-full h-full object-cover" alt="G" />
+                            <button type="button" onClick={() => removeGalleryImage(i)} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 opacity-0 group-hover:opacity-100"><X className="w-3 h-3" /></button>
                           </div>
-                          <button 
-                            type="button"
-                            onClick={() => removeFinancingPlan(idx)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vídeo URL - Full Width at Bottom */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <div className="w-full">
+                      <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Vídeo URL</label>
+                      <input type="url" value={formState.video_url} onChange={e => setFormState({...formState, video_url: e.target.value})} className="w-full h-14 px-5 bg-white border border-gray-200 rounded-2xl outline-none shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium" placeholder="https://youtube.com/..." />
+                    </div>
+                    <div className="flex justify-end">
+                       <label className={`h-14 px-6 bg-emerald-500 text-white rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-100 font-black text-xs uppercase tracking-widest ${formState.images.length >= 5 ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}>
+                          <Camera className="w-5 h-5" /> 
+                          <span>Add Foto Galeria</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={handleGalleryUpload} disabled={formState.images.length >= 5} />
+                       </label>
+                       {formState.images.length >= 5 && <p className="text-[8px] font-bold text-red-500 mt-1 uppercase text-center ml-4">Máximo 5 fotos atingido</p>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seção de Funcionalidades e Visibilidade */}
+                <div className="bg-gray-50/20 px-5 md:px-8 py-8 md:py-10 rounded-3xl md:rounded-[2.5rem] border border-gray-100 space-y-8 md:space-y-10">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100/50 rounded-lg text-blue-600"><ShieldCheck className="w-6 h-6" /></div>
+                      <h3 className="text-lg md:text-xl font-black text-gray-800 uppercase tracking-tight">Recursos e Visibilidade</h3>
+                    </div>
+                    
+                    <div className="flex items-center gap-6">
+                        {/* Destaque Toggle */}
+                        <div className="flex items-center gap-4 bg-white px-5 py-2.5 rounded-2xl border border-gray-100 shadow-sm">
+                           <div className="flex items-center gap-2">
+                             <div className={`p-1.5 rounded-md ${formState.is_highlighted ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-400'}`}>
+                               <Star className={`w-3.5 h-3.5 ${formState.is_highlighted ? 'fill-amber-600' : ''}`} />
+                             </div>
+                             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Destaque</span>
+                           </div>
+                           <button type="button" onClick={() => setFormState(prev => ({ ...prev, is_highlighted: !prev.is_highlighted }))} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ${formState.is_highlighted ? 'bg-amber-500 shadow-md shadow-amber-100' : 'bg-gray-200'}`}>
+                              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${formState.is_highlighted ? 'translate-x-6' : 'translate-x-1'}`} />
+                           </button>
                         </div>
-                      ))}
+
+                        {/* Ativo Toggle */}
+                        <div className="flex items-center gap-4 bg-white px-5 py-2.5 rounded-2xl border border-gray-100 shadow-sm">
+                           <div className="flex items-center gap-2">
+                             <div className={`p-1.5 rounded-md ${formState.is_active ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                               <Check className="w-3.5 h-3.5" />
+                             </div>
+                             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Ativo</span>
+                           </div>
+                           <button type="button" onClick={() => setFormState(prev => ({ ...prev, is_active: !prev.is_active }))} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ${formState.is_active ? 'bg-emerald-500 shadow-md shadow-emerald-100' : 'bg-gray-200'}`}>
+                              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${formState.is_active ? 'translate-x-6' : 'translate-x-1'}`} />
+                           </button>
+                        </div>
+
+                        {/* Mostrar nas Filiais Toggle (Only for Matrix/Admin) */}
+                        {!user?.root_id && (
+                          <div className="flex items-center gap-4 bg-white px-5 py-2.5 rounded-2xl border border-gray-100 shadow-sm">
+                             <div className="flex items-center gap-2">
+                               <div className={`p-1.5 rounded-md ${formState.show_on_branches ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+                                 <ArrowRightLeft className="w-3.5 h-3.5" />
+                               </div>
+                               <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Mostrar nas Filiais</span>
+                             </div>
+                             <button type="button" onClick={() => setFormState(prev => ({ ...prev, show_on_branches: !prev.show_on_branches }))} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ${formState.show_on_branches ? 'bg-blue-600 shadow-md shadow-blue-100' : 'bg-gray-200'}`}>
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${formState.show_on_branches ? 'translate-x-6' : 'translate-x-1'}`} />
+                             </button>
+                          </div>
+                        )}
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                    {/* Consórcio */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between px-2">
+                        <label className="block text-[10px] font-black text-blue-600 uppercase tracking-widest ml-1">Tabela de Consórcio</label>
+                        <button type="button" onClick={() => setFormState(prev => ({ ...prev, has_consortium: !prev.has_consortium }))} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ${formState.has_consortium ? 'bg-blue-600 shadow-md shadow-blue-100' : 'bg-gray-200'}`}>
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${formState.has_consortium ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                      </div>
+                      <div className={`transition-all duration-500 ${formState.has_consortium ? 'opacity-100' : 'opacity-40 grayscale pointer-events-none'}`}>
+                        <div className="relative h-48 bg-white rounded-3xl border border-blue-100 flex items-center justify-center overflow-hidden group shadow-sm transition-all hover:border-blue-300">
+                          {formState.consortium_image ? <img src={formState.consortium_image} className="w-full h-full object-contain p-4" alt="T" /> : <div className="text-center"><Camera className="w-8 h-8 text-blue-200 mx-auto mb-2" /><span className="text-[10px] font-bold text-blue-300 uppercase">Anexar Tabela</span></div>}
+                          <label className="absolute inset-0 bg-blue-600/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity backdrop-blur-sm"><span className="bg-white/20 px-6 py-2 rounded-full font-bold text-sm backdrop-blur-md">Alterar</span><input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'consortium_image')} /></label>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="p-4 bg-white border border-dashed border-blue-200 rounded-2xl flex flex-wrap items-center gap-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase ml-1">Entrada</span>
-                        <input
-                          type="text"
-                          value={newFinancingPlan.down_payment}
-                          onChange={handleFinancingDownPaymentChange}
-                          placeholder="R$ 0,00"
-                          className="w-32 px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
-                        />
+                    {/* Liberacred */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between px-2">
+                        <label className="block text-[10px] font-black text-orange-600 uppercase tracking-widest ml-1">Banner Liberacred</label>
+                        <button type="button" onClick={() => setFormState(prev => ({ ...prev, has_liberacred: !prev.has_liberacred }))} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ${formState.has_liberacred ? 'bg-orange-500 shadow-md shadow-orange-100' : 'bg-gray-200'}`}>
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${formState.has_liberacred ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
                       </div>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase ml-1">Parcelas</span>
-                        <input
-                          type="number"
-                          value={newFinancingPlan.installments || ''}
-                          onChange={(e) => setNewFinancingPlan({ ...newFinancingPlan, installments: parseInt(e.target.value) || 0 })}
-                          placeholder="Qtd"
-                          className="w-20 px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-center font-bold"
-                        />
+                      <div className={`transition-all duration-500 ${formState.has_liberacred ? 'opacity-100' : 'opacity-40 grayscale pointer-events-none'}`}>
+                        <div className="relative h-48 bg-white rounded-3xl border border-orange-100 flex items-center justify-center overflow-hidden group shadow-sm transition-all hover:border-orange-300">
+                          {formState.liberacred_image ? <img src={formState.liberacred_image} className="w-full h-full object-contain p-4" alt="B" /> : <div className="text-center"><Camera className="w-8 h-8 text-orange-200 mx-auto mb-2" /><span className="text-[10px] font-bold text-orange-300 uppercase">Anexar Banner</span></div>}
+                          <label className="absolute inset-0 bg-orange-600/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity backdrop-blur-sm"><span className="bg-white/20 px-6 py-2 rounded-full font-bold text-sm backdrop-blur-md">Alterar</span><input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'liberacred_image')} /></label>
+                        </div>
                       </div>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase ml-1">Valor Parcela</span>
-                        <input
-                          type="text"
-                          value={newFinancingPlan.value}
-                          onChange={handleFinancingValueChange}
-                          placeholder="R$ 0,00"
-                          className="w-32 px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={addFinancingPlan}
-                        className="mt-5 flex items-center gap-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md active:scale-95"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Adicionar
-                      </button>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
 
-              {formState.has_liberacred && (
-                <div className="animate-in slide-in-from-top-2 duration-300">
-                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider text-orange-600">Banner Customizado Liberacred</label>
-                  <div className="relative h-40 bg-orange-50 rounded-2xl border-2 border-dashed border-orange-200 flex flex-col items-center justify-center overflow-hidden group transition-colors hover:border-orange-300">
-                    {formState.liberacred_image ? (
-                      <img src={formState.liberacred_image} className="w-full h-full object-contain p-2" alt="Preview" />
-                    ) : (
-                      <Camera className="w-10 h-10 text-orange-200" />
-                    )}
-                    <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity backdrop-blur-[2px]">
-                      <span className="bg-white/20 px-4 py-2 rounded-full font-bold text-sm backdrop-blur-md">Anexar Banner</span>
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'liberacred_image')} />
-                    </label>
+                {/* Planos de Consórcio - DESIGN PREMIUM DO PRINT */}
+                <div className="bg-white px-8 py-10 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-10">
+                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                         <Calculator className="w-6 h-6 text-purple-600" />
+                         <h3 className="text-xl font-black text-[#1a1a1a]">Planos de Consórcio</h3>
+                      </div>
+                      <div className="flex items-center gap-4">
+                         <span className={`${formState.show_consortium_plans ? 'text-purple-600' : 'text-gray-400'} text-[10px] font-black uppercase tracking-widest transition-colors`}>Habilitar Planos</span>
+                         <button 
+                           type="button" 
+                           onClick={() => setFormState(prev => ({ ...prev, show_consortium_plans: !prev.show_consortium_plans }))} 
+                           className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 ${formState.show_consortium_plans ? 'bg-purple-600 shadow-lg shadow-purple-100' : 'bg-gray-200'}`}
+                         >
+                            <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${formState.show_consortium_plans ? 'translate-x-7' : 'translate-x-1'}`} />
+                         </button>
+                      </div>
+                   </div>
+
+                   {formState.show_consortium_plans && (
+                     <div className="space-y-8 animate-in slide-in-from-top-4 duration-500">
+                        <div className="space-y-4">
+                           {formState.consortium_plans.map((p, i) => (
+                             <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-6 bg-white rounded-3xl md:rounded-[2rem] border border-gray-100 shadow-md transition-all hover:bg-gray-50/50 gap-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-4 md:gap-12 flex-1 min-w-0">
+                                   <div className="flex items-center gap-4">
+                                      <span className="text-[10px] md:text-[12px] font-black text-gray-300 uppercase italic tracking-widest shrink-0">Parcelas:</span>
+                                      <span className="h-12 md:h-16 min-w-[110px] md:min-w-[150px] px-5 md:px-7 bg-purple-50 text-purple-600 rounded-2xl md:rounded-[1.5rem] flex items-center justify-center font-black text-2xl md:text-3xl border-2 border-purple-100 shadow-sm shrink-0 transition-all">{p.installments}x</span>
+                                   </div>
+                                   <div className="flex flex-col gap-2">
+                                      <span className="text-[10px] md:text-[12px] font-black text-gray-300 uppercase italic tracking-widest shrink-0">Investimento:</span>
+                                      <div className="flex items-center gap-2">
+                                         <span className="text-[10px] md:text-sm font-medium text-gray-400 italic">de</span>
+                                         <span className="text-2xl md:text-3xl font-black text-[#1a1a1a]">R$ {p.value} <span className="text-[10px] md:text-sm font-normal text-gray-400 ml-1">/mês</span></span>
+                                      </div>
+                                   </div>
+                                </div>
+                                <div className="flex justify-end p-2 border-t border-gray-50 sm:border-0 sm:p-0">
+                                   <button type="button" onClick={() => removePlan(i)} className="flex items-center gap-2 px-4 py-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all font-bold text-[10px] uppercase">
+                                      <Trash2 className="w-4 h-4 md:w-6 md:h-6" />
+                                      <span className="sm:hidden">Remover Plano</span>
+                                   </button>
+                                </div>
+                             </div>
+                           ))}
+                        </div>
+                        <div className="bg-gray-50/50 p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-dashed border-purple-200 flex flex-col md:flex-row md:items-end gap-4 md:gap-6 shadow-inner">
+                           <div className="w-full md:w-48"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest">Parcelas</label><input type="number" value={newPlan.installments || ''} onChange={e => setNewPlan({...newPlan, installments: parseInt(e.target.value) || 0})} placeholder="Qtd" className="w-full h-14 px-5 bg-white border border-gray-200 rounded-2xl font-black text-center text-purple-600 shadow-sm transition-all focus:border-purple-400 outline-none" /></div>
+                           <div className="w-full md:flex-1 md:min-w-[250px]"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest">Valor da Parcela</label><input type="text" value={newPlan.value} onChange={handlePlanValueChange} placeholder="0,00" className="w-full h-14 px-5 bg-white border border-gray-200 rounded-2xl font-black text-lg shadow-sm transition-all focus:border-purple-400 outline-none" /></div>
+                           <button type="button" onClick={addPlan} className="w-full md:w-auto h-14 px-10 bg-purple-600 text-white font-black rounded-2xl hover:bg-purple-700 shadow-xl shadow-purple-200 uppercase text-xs tracking-widest active:scale-95 transition-all">+ Add Plano</button>
+                        </div>
+                     </div>
+                   )}
+                </div>
+
+                {/* Planos de Financiamento - DESIGN PREMIUM DO PRINT */}
+                <div className="bg-white px-8 py-10 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-10">
+                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                         <Calculator className="w-6 h-6 text-blue-600" />
+                         <h3 className="text-xl font-black text-[#1a1a1a]">Planos de Financiamento</h3>
+                      </div>
+                      <div className="flex items-center gap-4">
+                         <span className={`${formState.show_financing_plans ? 'text-blue-600' : 'text-gray-400'} text-[10px] font-black uppercase tracking-widest transition-colors`}>Habilitar Planos</span>
+                         <button 
+                           type="button" 
+                           onClick={() => setFormState(prev => ({ ...prev, show_financing_plans: !prev.show_financing_plans }))} 
+                           className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 ${formState.show_financing_plans ? 'bg-blue-600 shadow-lg shadow-blue-100' : 'bg-gray-200'}`}
+                         >
+                            <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${formState.show_financing_plans ? 'translate-x-7' : 'translate-x-1'}`} />
+                         </button>
+                      </div>
+                   </div>
+
+                   {formState.show_financing_plans && (
+                     <div className="space-y-10 animate-in slide-in-from-top-4 duration-500">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                           <div><label className="block text-[10px] font-black text-gray-400 mb-2 ml-1 tracking-widest">Valor à Vista</label><input type="text" value={formState.cash_price} onChange={handleCashPriceChange} placeholder="39.000,00" className="w-full h-14 px-6 bg-white border border-gray-200 rounded-2xl font-black text-blue-600 text-xl shadow-sm focus:border-blue-400 outline-none transition-all" /></div>
+                           <div><label className="block text-[10px] font-black text-gray-400 mb-2 ml-1 tracking-widest">Parcelas Cartão</label><div className="relative"><input type="text" value={formState.card_installments} onChange={handleCardInstallmentsChange} placeholder="10" className="w-full h-14 px-6 bg-white border border-gray-200 rounded-2xl font-black text-lg shadow-sm focus:border-blue-400 outline-none transition-all" /><span className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300 font-bold">x</span></div></div>
+                           <div className="flex items-center h-14 mt-6"><label className="flex items-center gap-4 cursor-pointer group px-4 py-2 bg-blue-50/50 rounded-2xl border border-blue-50"><input type="checkbox" checked={formState.card_interest} onChange={e => setFormState({...formState, card_interest: e.target.checked})} className="w-6 h-6 rounded-lg text-blue-600 border-gray-200" /><span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Com Juros</span></label></div>
+                        </div>
+
+                        <div className="space-y-6">
+                           <label className="block text-[12px] font-black text-gray-300 uppercase tracking-[0.2em] ml-1">Opções de Financiamento</label>
+                           <div className="space-y-4">
+                              {formState.financing_plans.map((p, i) => (
+                                <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-6 bg-white rounded-3xl md:rounded-[2rem] border border-gray-100 shadow-md transition-all hover:bg-gray-50/50 gap-6">
+                                   <div className="flex flex-col sm:flex-row sm:items-center gap-x-12 gap-y-6 flex-1 min-w-0">
+                                      <div className="flex items-center gap-3">
+                                         <span className="text-[10px] md:text-[12px] font-black text-gray-300 uppercase italic tracking-widest shrink-0">Entrada:</span>
+                                         <span className="text-xl md:text-2xl font-black text-blue-600 truncate">R$ {p.down_payment}</span>
+                                      </div>
+                                      <div className="flex flex-wrap items-center gap-4 md:gap-6">
+                                         <span className="text-[10px] md:text-[12px] font-black text-gray-300 uppercase italic tracking-widest shrink-0">Restante:</span>
+                                         <span className="h-12 md:h-16 min-w-[110px] md:min-w-[150px] px-5 md:px-7 bg-blue-50 text-blue-600 rounded-2xl md:rounded-[1.5rem] flex items-center justify-center font-black text-2xl md:text-3xl border-2 border-blue-100 shadow-sm shrink-0 transition-all">{p.installments}x</span>
+                                         <div className="flex items-center gap-2 font-black text-[#1a1a1a] flex-wrap">
+                                            <span className="text-[10px] md:text-sm font-medium text-gray-400 italic">de</span>
+                                            <span className="text-2xl md:text-3xl">R$ {p.value} <span className="text-[10px] md:text-sm font-normal text-gray-400 ml-1">/mês</span></span>
+                                         </div>
+                                      </div>
+                                   </div>
+                                   <div className="flex justify-end p-2 border-t border-gray-50 sm:border-0 sm:p-0">
+                                      <button type="button" onClick={() => removeFinancingPlan(i)} className="flex items-center gap-2 px-4 py-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all font-bold text-[10px] uppercase">
+                                         <Trash2 className="w-4 h-4 md:w-6 md:h-6" />
+                                         <span className="sm:hidden">Remover Plano</span>
+                                      </button>
+                                   </div>
+                                </div>
+                              ))}
+                           </div>
+                           <div className="bg-blue-50/30 p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-dashed border-blue-200 flex flex-col md:flex-row md:items-end gap-4 md:gap-6 shadow-inner">
+                              <div className="w-full md:flex-1 md:min-w-[180px]"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest">Entrada</label><input type="text" value={newFinancingPlan.down_payment} onChange={handleFinancingDownPaymentChange} placeholder="R$ 0,00" className="w-full h-14 px-6 bg-white border border-gray-200 rounded-2xl font-black text-blue-600 shadow-sm focus:border-blue-400 outline-none transition-all" /></div>
+                              <div className="w-full md:w-48"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest">Parcelas</label><input type="number" value={newFinancingPlan.installments || ''} onChange={e => setNewFinancingPlan({...newFinancingPlan, installments: parseInt(e.target.value) || 0})} placeholder="Qtd" className="w-full h-14 px-5 bg-white border border-gray-200 rounded-2xl font-black text-center shadow-sm focus:border-blue-400 outline-none transition-all" /></div>
+                              <div className="w-full md:flex-[1.5] md:min-w-[200px]"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest">Valor Parcela</label><input type="text" value={newFinancingPlan.value} onChange={handleFinancingValueChange} placeholder="R$ 0,00" className="w-full h-14 px-6 bg-white border border-gray-200 rounded-2xl font-black text-lg shadow-sm focus:border-blue-400 outline-none transition-all" /></div>
+                              <button type="button" onClick={addFinancingPlan} className="w-full md:w-auto h-14 px-10 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-200 uppercase text-xs tracking-widest active:scale-95 transition-all">+ Adicionar</button>
+                           </div>
+                        </div>
+                     </div>
+                   )}
+                </div>
+
+                <div className="bg-gray-50/50 p-6 rounded-[2.5rem] border border-gray-100">
+                  <h3 className="text-sm font-black text-gray-800 uppercase tracking-tight mb-4">Opcionais do {userNiche === 'realestate' ? 'Imóvel' : 'Veículo'}</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 text-[10px]">
+                    {CURRENT_OPTIONALS.map(opt => (
+                      <label key={opt} className="flex items-center gap-2 p-2 bg-white border border-transparent hover:border-blue-100 rounded-xl cursor-pointer transition-all">
+                        <input type="checkbox" checked={formState.optionals.includes(opt)} onChange={e => {
+                          const newList = e.target.checked ? [...formState.optionals, opt] : formState.optionals.filter(o => o !== opt);
+                          setFormState({...formState, optionals: newList});
+                        }} className="w-4 h-4 text-blue-600 rounded" />
+                        <span className="truncate font-medium">{opt}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
-              )}
 
-              {/* Opcionais */}
-              <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
-                <div className="flex items-center gap-2 mb-4">
-                  <Package className="w-5 h-5 text-gray-400" />
-                  <h3 className="text-lg font-bold text-gray-800">Opcionais</h3>
+                {/* Sticky Footer */}
+                <div className="sticky bottom-0 -mx-8 -mb-8 p-6 mt-12 bg-white/90 backdrop-blur-xl border-t border-blue-50 flex items-center gap-4 z-20 rounded-b-[2.5rem] shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+                  <button type="button" onClick={closeForm} className="px-12 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl hover:bg-gray-200">CANCELAR</button>
+                  <button type="submit" disabled={submitting} className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 uppercase tracking-widest text-xs">
+                    {submitting ? 'SALVANDO...' : (editingId ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR PRODUTO')}
+                  </button>
                 </div>
-                <p className="text-sm text-gray-500 mb-6">{userNiche === 'realestate' ? 'Selecione os opcionais e comodidades do imóvel' : 'Selecione os opcionais disponíveis no veículo'}</p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {CURRENT_OPTIONALS.map((optional) => (
-                    <label key={optional} className="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-xl cursor-pointer hover:border-blue-200 transition-all hover:shadow-sm">
-                      <input
-                        type="checkbox"
-                        checked={formState.optionals.includes(optional)}
-                        onChange={(e) => {
-                          const newOptionals = e.target.checked
-                            ? [...formState.optionals, optional]
-                            : formState.optionals.filter(o => o !== optional);
-                          setFormState({ ...formState, optionals: newOptionals });
-                        }}
-                        className="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-200 rounded-lg cursor-pointer"
-                      />
-                      <span className="text-sm text-gray-600 font-medium">{optional}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-6 bg-blue-50/50 border border-blue-100 rounded-[2rem]">
-                <button
-                  type="button"
-                  onClick={closeForm}
-                  className="px-8 py-4 bg-white hover:bg-gray-50 text-gray-700 font-bold rounded-2xl transition-all border border-gray-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 py-4 bg-[#003da5] hover:bg-[#002b75] text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-100 disabled:opacity-50"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-5 h-5" />
-                      {editingId ? 'Salvar Alterações' : 'Cadastrar Produto'}
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
-
-      {/* Lista de Produtos */}
-      <div className="grid grid-cols-1 gap-4">
-        {products.length === 0 ? (
-          <div className="bg-white p-20 rounded-[2.5rem] border-2 border-dashed border-gray-100 text-center text-gray-400">
-            <Package className="w-16 h-16 mx-auto mb-6 opacity-10" />
-            <p className="text-xl font-medium">Seu catálogo está vazio</p>
-            <p className="text-sm opacity-60">Comece adicionando seu primeiro produto acima.</p>
-          </div>
-        ) : (
-          products
-            .filter(product => 
-              product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-              product.description?.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-            .map((product) => (
-            <div 
-              key={product.id} 
-              className="bg-white p-6 rounded-[2.5rem] border border-gray-100 flex items-center gap-6 group hover:shadow-xl hover:shadow-blue-50/50 transition-all animate-in slide-in-from-bottom-4 duration-500"
-            >
-              <div className="w-24 h-24 lg:w-32 lg:h-32 bg-gray-50 rounded-3xl overflow-hidden flex-shrink-0 border border-gray-50 group-hover:scale-105 transition-transform duration-500">
-                <img src={product.image} className="w-full h-full object-cover" alt={product.name} />
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-lg lg:text-xl font-bold text-gray-900 truncate font-heading group-hover:text-blue-600 transition-colors uppercase">{product.name}</h3>
-                  {product.niche === 'realestate' && (
-                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-black uppercase rounded-full border border-blue-100">
-                      Imóvel
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
-                  <div className="flex items-center gap-1.5 text-blue-600 font-bold text-base lg:text-lg">
-                    R$ {product.price}
-                  </div>
-                  {product.year && (
-                    <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold uppercase tracking-wider">
-                      <Check className="w-3.5 h-3.5" />
-                      {product.year}
-                    </div>
-                  )}
-                  <div className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${product.is_active !== false ? 'text-emerald-500' : 'text-gray-400'}`}>
-                    <div className={`w-2 h-2 rounded-full ${product.is_active !== false ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`} />
-                    {product.is_active !== false ? 'Ativo' : 'Inativo'}
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <div className="flex flex-col items-center">
-                    <label className="relative inline-flex items-center cursor-pointer group">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer"
-                        checked={product.is_active !== false}
-                        onChange={async (e) => {
-                          e.stopPropagation();
-                          const oldStatus = product.is_active !== false;
-                          const newStatus = !oldStatus;
-                          setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_active: newStatus } : p));
-                          try {
-                            const res = await fetch(`/api/products/${product.id}`, {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ is_active: newStatus })
-                            });
-                            if (res.ok) {
-                              toast.success(newStatus ? 'Produto Ativado!' : 'Produto Desativado!');
-                              fetchProducts();
-                            } else {
-                              const err = await res.json();
-                              toast.error(err.error || 'Erro ao atualizar status');
-                              setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_active: oldStatus } : p));
-                            }
-                          } catch (err) {
-                            toast.error('Erro de conexão ao atualizar status');
-                            setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_active: oldStatus } : p));
-                          }
-                        }}
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                    <span className={`text-[8px] font-bold uppercase mt-1 ${product.is_active !== false ? 'text-blue-600' : 'text-gray-400'}`}>
-                      {product.is_active !== false ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleDuplicate(product)}
-                      className="p-3.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-2xl transition-all"
-                      title="Duplicar"
-                    >
-                      <Copy className="w-5 h-5 lg:w-6 lg:h-6" />
-                    </button>
-                    <button 
-                      onClick={() => handleEdit(product)}
-                      className="p-3.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-2xl transition-all"
-                      title="Editar"
-                    >
-                      <Edit2 className="w-5 h-5 lg:w-6 lg:h-6" />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteProduct(product.id)}
-                      className="p-3.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-2xl transition-all"
-                      title="Excluir"
-                    >
-                      <Trash2 className="w-5 h-5 lg:w-6 lg:h-6" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
         )}
-      </div>
+      </AnimatePresence>
 
-      {/* Custom Confirmation Modal */}
-      {confirmConfig?.isOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-[2rem] shadow-2xl p-8 max-w-sm w-full text-center"
-          >
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Trash2 className="w-8 h-8" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2 font-heading">{confirmConfig.title}</h3>
-            <p className="text-gray-500 text-sm mb-8">Esta ação não pode ser desfeita.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmConfig(null)}
-                className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmConfig.onConfirm}
-                className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-100"
-              >
-                Excluir
-              </button>
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-[2rem] w-full max-w-sm p-8 text-center shadow-2xl">
+              <Trash2 className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-xl font-black text-gray-900 mb-2">Confirmar Exclusão</h3>
+              <p className="text-sm text-gray-500 mb-8">Esta ação não pode ser desfeita.</p>
+              <div className="flex gap-3">
+                <button onClick={() => handleDeleteProduct(showDeleteConfirm)} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 uppercase text-xs">Sim, Excluir</button>
+                <button onClick={() => setShowDeleteConfirm(null)} className="flex-1 py-3 bg-gray-50 text-gray-600 rounded-xl font-bold uppercase text-xs">Cancelar</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      
+      {priceModal?.isOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-[2.5rem] shadow-2xl p-8 max-w-sm w-full">
+            <Calculator className="w-8 h-8 text-blue-600 mx-auto mb-4" />
+            <h3 className="text-xl font-black text-gray-900 mb-1 text-center">Preço Regional</h3>
+            <p className="text-[10px] text-gray-400 text-center mb-6 uppercase font-bold tracking-widest">Somente para esta unidade</p>
+            <div className="space-y-4">
+               <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-300 font-black">R$</div>
+                  <input
+                    type="text"
+                    value={priceModal.currentPrice}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/\D/g, "");
+                      const formatted = val === "" ? "" : new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(parseFloat(val) / 100);
+                      setPriceModal(prev => ({ ...prev!, currentPrice: formatted }));
+                    }}
+                    className="w-full pl-12 pr-4 text-2xl font-black text-blue-600 bg-gray-50 border border-gray-100 py-5 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="0,00"
+                    autoFocus
+                  />
+               </div>
+               <div className="flex gap-3 pt-4">
+                  <button onClick={() => setPriceModal(null)} className="flex-1 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl uppercase text-[10px] tracking-widest">Cancelar</button>
+                  <button onClick={async () => {
+                    const res = await fetch('/api/products/toggle', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ productId: priceModal.productId, priceOverride: priceModal.currentPrice })
+                    });
+                    if (res.ok) { toast.success('Preço salvo!'); fetchProducts(); setPriceModal(null); }
+                  }} className="flex-1 py-4 bg-blue-600 text-white font-bold rounded-2xl uppercase text-[10px] tracking-widest">Salvar</button>
+               </div>
             </div>
           </motion.div>
         </div>

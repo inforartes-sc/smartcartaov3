@@ -1,0 +1,164 @@
+﻿[dotenv@17.3.1] injecting env (8) from .env -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+­ƒöì Analisando Diferen├ºas de Schema...
+
+--- Tabela: profiles ---
+­ƒøá´©Å Sincronizando colunas para profiles...
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS username TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS display_name TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role_title TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS profile_image TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS whatsapp TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS instagram TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS facebook TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS slug TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS card_bottom_image TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS footer_text TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS primary_color TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS background_color TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_links JSONB;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS marquee_text TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS show_marquee BOOLEAN;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS marquee_speed BIGINT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS views BIGINT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS card_background_image TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS admin_message TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS admin_message_date TIMESTAMPTZ;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS status TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS plan_type TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS expiry_date TIMESTAMPTZ;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS plan_id BIGINT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS establishment TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS show_catalog_banner BOOLEAN;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS show_profile_banner BOOLEAN;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS profile_banner_image TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS documento TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email TEXT;
+   + Sugerindo: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS niche TEXT;
+
+--- Tabela: products ---
+­ƒøá´©Å Sincronizando colunas para products...
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS user_id TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS name TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS image TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS description TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS colors TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS consortium_image TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS has_liberacred BOOLEAN;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS price TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS liberacred_image TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS images TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS is_highlighted BOOLEAN;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS is_new BOOLEAN;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS year TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS mileage TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS brand TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS condition TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS fuel TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS transmission TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS color TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS optionals TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS show_consortium_plans BOOLEAN;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS consortium_plans TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS has_consortium BOOLEAN;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS views BIGINT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS sales BIGINT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS show_financing_plans BOOLEAN;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS financing_plans TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS cash_price TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS card_installments TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS card_interest BOOLEAN;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS niche TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS property_type TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS bedrooms TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS bathrooms TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS suites TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS parking_spaces TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS area TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS location TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS is_for_sale BOOLEAN;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS is_for_rent BOOLEAN;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS condo_fee TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS iptu TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS map_url TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS video_url TEXT;
+   + Sugerindo: ALTER TABLE products ADD COLUMN IF NOT EXISTS property_status TEXT;
+
+--- Tabela: system_settings ---
+­ƒøá´©Å Sincronizando colunas para system_settings...
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS default_logo TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS default_phone TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS footer_logo TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS favicon TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS system_version TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS footer_text TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_concept_title TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_concept_subtitle TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_concept_item1_t TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_concept_item1_d TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_concept_item2_t TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_concept_item2_d TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_concept_item3_t TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_concept_item3_d TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_features_title TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_cta_title TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_cta_subtitle TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_cta_button TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_example1 TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_example2 TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_example3 TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_example4 TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_mockup_service TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_mockup_features TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_mockup_hero TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_faqs TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_done_tag TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_done_title_first TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_done_title_last TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_done_text TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_catalog_tag TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_catalog_title_first TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_catalog_title_last TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_catalog_text TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_catalog_btn_text TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_catalog_btn_link TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_hero_title TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_hero_subtitle TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_hero_cta TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_stats_text TEXT;
+   + Sugerindo: ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS landing_stats_description TEXT;
+
+--- Tabela: plans ---
+­ƒøá´©Å Sincronizando colunas para plans...
+   + Sugerindo: ALTER TABLE plans ADD COLUMN IF NOT EXISTS name TEXT;
+   + Sugerindo: ALTER TABLE plans ADD COLUMN IF NOT EXISTS months BIGINT;
+   + Sugerindo: ALTER TABLE plans ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+   + Sugerindo: ALTER TABLE plans ADD COLUMN IF NOT EXISTS is_popular BOOLEAN;
+   + Sugerindo: ALTER TABLE plans ADD COLUMN IF NOT EXISTS billing_cycle TEXT;
+   + Sugerindo: ALTER TABLE plans ADD COLUMN IF NOT EXISTS description TEXT;
+   + Sugerindo: ALTER TABLE plans ADD COLUMN IF NOT EXISTS features TEXT;
+   + Sugerindo: ALTER TABLE plans ADD COLUMN IF NOT EXISTS price TEXT;
+   + Sugerindo: ALTER TABLE plans ADD COLUMN IF NOT EXISTS discount BIGINT;
+   + Sugerindo: ALTER TABLE plans ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
+--- Tabela: testimonials ---
+­ƒøá´©Å Sincronizando colunas para testimonials...
+   + Sugerindo: ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS name TEXT;
+   + Sugerindo: ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS role TEXT;
+   + Sugerindo: ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+   + Sugerindo: ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS content TEXT;
+   + Sugerindo: ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS rating BIGINT;
+   + Sugerindo: ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+
+--- Tabela: faturas ---
+­ƒøá´©Å Sincronizando colunas para faturas...
+   + Sugerindo: ALTER TABLE faturas ADD COLUMN IF NOT EXISTS user_id TEXT;
+   + Sugerindo: ALTER TABLE faturas ADD COLUMN IF NOT EXISTS amount TEXT;
+   + Sugerindo: ALTER TABLE faturas ADD COLUMN IF NOT EXISTS due_date TIMESTAMPTZ;
+   + Sugerindo: ALTER TABLE faturas ADD COLUMN IF NOT EXISTS status TEXT;
+   + Sugerindo: ALTER TABLE faturas ADD COLUMN IF NOT EXISTS payment_link TEXT;
+   + Sugerindo: ALTER TABLE faturas ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;

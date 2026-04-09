@@ -9,8 +9,10 @@ interface Plan {
   price: string;
   description: string;
   features: string;
-  billing_cycle: 'monthly' | 'yearly';
+  billing_cycle: 'monthly' | 'semiannual' | 'yearly';
   is_popular: boolean;
+  quota?: string;
+  agencies?: string;
 }
 
 const DEFAULT_PLANS_INFO = [
@@ -34,7 +36,9 @@ export default function MasterPlans() {
     features: '',
     discount: '',
     billing_cycle: 'monthly',
-    is_popular: false
+    is_popular: false,
+    quota: '',
+    agencies: ''
   });
 
   useEffect(() => {
@@ -99,7 +103,7 @@ export default function MasterPlans() {
         toast.success(editingPlan ? 'Plano atualizado!' : 'Plano criado!', { id: loadingToast });
         setShowAdd(false);
         setEditingPlan(null);
-        setFormData({ name: '', months: 1, price: '', description: '', features: '', discount: '', billing_cycle: 'monthly', is_popular: false });
+        setFormData({ name: '', months: 1, price: '', description: '', features: '', discount: '', billing_cycle: 'monthly', is_popular: false, quota: '', agencies: '' });
         fetchPlans();
       } else {
         const errorData = await res.json();
@@ -141,7 +145,7 @@ export default function MasterPlans() {
         <button 
           onClick={() => {
             setEditingPlan(null);
-            setFormData({ name: '', months: 1, price: '', description: '', features: '', discount: '', billing_cycle: 'monthly', is_popular: false });
+            setFormData({ name: '', months: 1, price: '', description: '', features: '', discount: '', billing_cycle: 'monthly', is_popular: false, quota: '', agencies: '' });
             setShowAdd(true);
           }}
           className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all text-xs"
@@ -210,6 +214,29 @@ export default function MasterPlans() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">Vagas (Ex: 10 Cartões)</label>
+                <input
+                  type="text"
+                  value={formData.quota || ''}
+                  onChange={(e) => setFormData({ ...formData, quota: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                  placeholder="Ilimitado"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">Filiais (Ex: Até 5 Filiais)</label>
+                <input
+                  type="text"
+                  value={formData.agencies || ''}
+                  onChange={(e) => setFormData({ ...formData, agencies: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                  placeholder="Sem Filiais"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">Recursos (Separados por vírgula)</label>
                   <textarea
@@ -238,6 +265,7 @@ export default function MasterPlans() {
                     className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none ring-blue-500 focus:ring-2"
                   >
                     <option value="monthly">Mensal</option>
+                    <option value="semiannual">Semestral</option>
                     <option value="yearly">Anual</option>
                   </select>
                   <span className="text-[10px] font-black uppercase text-gray-400">Ciclo</span>
@@ -296,7 +324,9 @@ export default function MasterPlans() {
                       features: featuresClean || '',
                       discount: discountText,
                       billing_cycle: plan.billing_cycle || 'monthly',
-                      is_popular: plan.is_popular === true
+                      is_popular: plan.is_popular === true,
+                      quota: plan.quota || '',
+                      agencies: plan.agencies || ''
                     });
                   }}
                   className="p-2.5 bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all"
@@ -330,6 +360,17 @@ export default function MasterPlans() {
                   <span className="text-[8px] font-black uppercase tracking-widest">Destaque Page</span>
                 </div>
               )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mb-6">
+              <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-center">
+                <p className="text-[8px] uppercase font-bold text-gray-400 mb-0.5 tracking-tighter">Vagas</p>
+                <p className="text-[10px] font-black text-gray-900 truncate">{plan.quota || '---'}</p>
+              </div>
+              <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-center">
+                <p className="text-[8px] uppercase font-bold text-gray-400 mb-0.5 tracking-tighter">Filiais</p>
+                <p className="text-[10px] font-black text-gray-900 truncate">{plan.agencies || '---'}</p>
+              </div>
             </div>
 
             <div className="space-y-2 mb-8 h-20 overflow-hidden">
