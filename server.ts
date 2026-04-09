@@ -1659,17 +1659,23 @@ const cleanNumeric = (val: any) => {
     try {
       console.log(`🔍 [SLUG-ROUTE] Serving metadata for: ${slug}`);
       
-      const possiblePaths = [
-        path.join(process.cwd(), 'dist', 'templ.html'),
-        path.join(process.cwd(), 'index.html'),
-        path.resolve(__dirname, 'dist/templ.html'),
-        path.resolve(__dirname, 'index.html')
-      ];
-      
-      const indexPath = possiblePaths.find(p => fs.existsSync(p));
-      if (!indexPath) return next();
-      
-      let html = fs.readFileSync(indexPath, 'utf-8');
+      let html = '';
+      try {
+        const potentialFile = path.resolve(process.cwd(), 'index.html');
+        const potentialDist = path.resolve(process.cwd(), 'dist/templ.html');
+        
+        if (fs.existsSync(potentialDist)) {
+          html = fs.readFileSync(potentialDist, 'utf-8');
+        } else if (fs.existsSync(potentialFile)) {
+          html = fs.readFileSync(potentialFile, 'utf-8');
+        } else {
+          // Absolute last resort
+           console.log("⚠️ Using internal fallback HTML");
+           html = `<!DOCTYPE html><html><head><title>Smart Cartão</title></head><body><div id="root"></div><script type="module" src="/assets/index.js"></script></body></html>`;
+        }
+      } catch (e) {
+        html = `<!DOCTYPE html><html><head><title>Smart Cartão</title></head><body><div id="root"></div></body></html>`;
+      }
 
       // Crucial: Injetar o Preamble do Vite usando path base '/' para garantir funcionamento local
       if (vite) {
