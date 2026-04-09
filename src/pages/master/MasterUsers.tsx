@@ -439,6 +439,7 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
                 <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Link</th>
                 <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">Status</th>
                 <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">Nível</th>
+                <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">Plano</th>
                 <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">Acesso</th>
                 <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">Views</th>
                 <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest text-right">Ações</th>
@@ -495,6 +496,16 @@ export default function MasterUsers({ users, fetchUsers }: Props) {
                     ) : (
                       <span className="text-gray-300 text-[8px] font-black uppercase">Consultor</span>
                     )}
+                  </td>
+                  <td className="px-6 py-3 text-center">
+                     <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase border shadow-sm ${
+                      (u.plan_type || '').toLowerCase().includes('ouro') ? 'bg-yellow-400 text-yellow-900 border-yellow-500' :
+                      (u.plan_type || '').toLowerCase().includes('prata') ? 'bg-slate-300 text-slate-800 border-slate-400' :
+                      (u.plan_type || '').toLowerCase().includes('bronze') ? 'bg-orange-200 text-orange-900 border-orange-300' :
+                      'bg-blue-100 text-blue-700 border-blue-200'
+                    }`}>
+                      {u.plan_type || 'Individual'}
+                    </span>
                   </td>
                   <td className="px-6 py-3 text-center">
                     {u.expiry_date ? (

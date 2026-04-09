@@ -3,6 +3,7 @@ import { UserPlus, Trash2, Edit2, Search, X, MessageCircle, Link, User, Camera, 
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
 import { uploadImage } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminAgencies() {
   const [agencies, setAgencies] = useState<any[]>([]);
@@ -12,6 +13,10 @@ export default function AdminAgencies() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const { user } = useAuth();
+  
+  const agencyLimit = user?.agency_limit || 0;
+  const isLimitReached = agencies.length >= agencyLimit;
   
   const [formData, setFormData] = useState({
     email: '',
@@ -135,11 +140,18 @@ export default function AdminAgencies() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h2 className="text-3xl font-black text-gray-900 tracking-tight">Agências & Filiais</h2>
-          <p className="text-gray-500 text-sm mt-1 uppercase tracking-widest font-bold opacity-60">Gerencie seus parceiros regionais</p>
+          <div className="flex items-center gap-3 mt-1">
+             <p className="text-gray-500 text-[10px] md:text-sm uppercase tracking-widest font-bold opacity-60">Gerencie seus parceiros regionais</p>
+             <div className="h-1 w-1 bg-gray-300 rounded-full" />
+             <span className={`text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full ${isLimitReached ? 'bg-red-50 text-red-600' : 'bg-purple-50 text-purple-600'}`}>
+                {agencies.length} / {agencyLimit} UTILIZADAS
+             </span>
+          </div>
         </div>
         <button
-          onClick={() => openModal()}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-100"
+          onClick={() => isLimitReached ? toast.error('Limite de agências atingido!') : openModal()}
+          disabled={isLimitReached}
+          className={`flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all shadow-lg ${isLimitReached ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none' : 'bg-purple-600 text-white hover:bg-purple-700 shadow-purple-100'}`}
         >
           <ShieldCheck className="w-5 h-5" />
           Nova Agência

@@ -273,7 +273,7 @@ export default function UserDashboard() {
                   </div>
                   <div>
                     <h4 className="text-xl md:text-2xl font-black text-gray-900 leading-none">
-                      {Math.max(0, (user.plan?.consultants_limit || 1) - (user.consultants_count || 0))}
+                      {Math.max(0, (user.user_limit || 5) - (user.consultants_count || 0))}
                     </h4>
                     <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">Vagas Livres</p>
                   </div>
@@ -284,7 +284,7 @@ export default function UserDashboard() {
                     <Target className="w-5 h-5 md:w-6 md:h-6" />
                   </div>
                   <div>
-                    <h4 className="text-xs md:text-xs font-black text-gray-900 leading-none truncate max-w-[150px] md:max-w-[120px]">{user.plan?.name || 'Iniciante'}</h4>
+                    <h4 className="text-xs md:text-xs font-black text-gray-900 leading-none truncate max-w-[150px] md:max-w-[120px]">{user.plan?.name || user.plan_type || 'Iniciante'}</h4>
                     <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">Seu Plano</p>
                   </div>
                 </div>

@@ -576,6 +576,8 @@ export default function MasterAdmin() {
                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Usuário</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Link (Slug)</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Nível</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Plano</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Views</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Ações</th>
               </tr>
@@ -605,6 +607,11 @@ export default function MasterAdmin() {
                     </a>
                   </td>
                   <td className="px-6 py-4 text-center">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase ${u.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                       {u.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
                     {u.is_admin ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 text-[10px] font-black uppercase rounded-full">
                         <ShieldAlert className="w-3 h-3" /> Master
@@ -612,6 +619,16 @@ export default function MasterAdmin() {
                     ) : (
                       <span className="text-gray-300 text-[10px] font-bold uppercase tracking-tighter">Membro</span>
                     )}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-sm ${
+                      (u.plan_type || '').toLowerCase().includes('ouro') ? 'bg-yellow-400 text-yellow-900' :
+                      (u.plan_type || '').toLowerCase().includes('prata') ? 'bg-slate-300 text-slate-800' :
+                      (u.plan_type || '').toLowerCase().includes('bronze') ? 'bg-orange-200 text-orange-900' :
+                      'bg-blue-100 text-blue-700'
+                    }`}>
+                      {u.plan_type || 'Standard'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-center font-bold text-gray-600 text-sm">{u.views || 0}</td>
                   <td className="px-6 py-4 text-right">

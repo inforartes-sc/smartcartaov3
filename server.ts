@@ -583,8 +583,14 @@ async function setupApp() {
       .select('id', { count: 'exact', head: true })
       .eq('parent_id', profile.id);
     
+    const { data: profileWithPlan } = await supabase
+      .from('profiles')
+      .select('*, plan:plans(*)')
+      .eq('id', profile.id)
+      .single();
+
     res.json({
-      ...profile,
+      ...(profileWithPlan || profile),
       consultants_count: count || 0
     });
   });
@@ -690,6 +696,23 @@ async function setupApp() {
     const { display_name, establishment, role_title, slug, status, plan_type, expiry_date, admin_message } = req.body;
     
     try {
+      let user_limit = 5;
+      let agency_limit = 0;
+      const plan_id = req.body.plan_id;
+
+      // Fetch plan details to get quotas
+      if (plan_id) {
+        const { data: plan } = await supabase.from('plans').select('*').eq('id', plan_id).single();
+        if (plan) {
+          // Handle "Ilimitado" or high numbers
+          const quota = String(plan.quota).toLowerCase();
+          const agencies = String(plan.agencies).toLowerCase();
+          
+          user_limit = (quota.includes('ilimitado') || quota.includes('unlimit')) ? 9999 : (parseInt(quota) || 5);
+          agency_limit = (agencies.includes('ilimitado') || agencies.includes('unlimit')) ? 9999 : (parseInt(agencies) || 0);
+        }
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({ 
@@ -698,15 +721,17 @@ async function setupApp() {
           role_title,
           slug,
           status,
-          plan_type,
-          plan_id: req.body.plan_id || null,
+          plan_type: req.body.plan_type || 'Standard',
+          plan_id: plan_id || null,
           expiry_date: expiry_date || null,
           documento: req.body.documento || req.body.cpf || null,
           email: req.body.email || null,
           admin_message,
           admin_message_date: new Date().toISOString(),
           is_admin: req.body.is_admin === true,
-          niche: req.body.niche
+          niche: req.body.niche,
+          user_limit,
+          agency_limit
         })
         .eq('id', req.params.id);
       
