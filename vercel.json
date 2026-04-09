@@ -22,7 +22,7 @@
     },
     {
       "src": "/((?!assets/|public/|uploads/).*)",
-      "dest": "/templ.html"
+      "dest": "server.ts"
     }
   ]
 }

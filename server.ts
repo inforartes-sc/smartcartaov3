@@ -1638,18 +1638,18 @@ const cleanNumeric = (val: any) => {
   });
 
   // Dynamic OG Tags for profiles (Must be AFTER API routes but BEFORE Vite/Prod fallbacks)
-  app.get(['/:slug', '/:slug/catalogo'], async (req, res, next) => {
-    const { slug } = req.params;
-    const isCatalog = req.path.endsWith('/catalogo');
+  app.get(['/', '/:slug', '/:slug/catalogo'], async (req, res, next) => {
+    const isCatalog = req.path.includes('/catalogo');
+    const slug = req.params.slug || 'home';
     
-    // Reserved keywords that shouldn't match a profile slug (system paths)
+    // Reserved keywords that should use regular site metadata
     const reserved = [
-      'login', 'register', 'admin', 'dashboard', 'api', 
-      'assets', 'vite', '@vite', '@react-refresh', 'node_modules',
-      'favicon.ico', 'robots.txt'
+      'admin', 'login', 'dashboard', 'pricing', 'onboarding', 'register', 
+      'master', 'financeiro', 'settings', 'plans', 'users', 'master-admin',
+      'home', 'index', 'app'
     ];
     
-    // Ignore internal files, paths with dots, starting with @, or reserved keywords
+    // Ignore internal files, paths with dots, or starting with @
     if (slug.includes('.') || slug.startsWith('@')) {
       return next();
     }
