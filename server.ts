@@ -1718,7 +1718,14 @@ const cleanNumeric = (val: any) => {
       let description = 'Crie seu cartão digital agora';
       let image = 'https://smartcartao.com/og-default.png';
 
-      if (!isReserved) {
+      if (isReserved) {
+        // Fetch default logo from settings for main site sharing
+        try {
+          const { data: settings } = await supabase.from('settings').select('default_logo, landing_hero_description').single();
+          if (settings?.default_logo) image = settings.default_logo;
+          if (settings?.landing_hero_description) description = settings.landing_hero_description;
+        } catch (e) {}
+      } else {
         // Use ilike for case-insensitive slug match
         const { data: profile } = await supabase.from('profiles').select('*').ilike('slug', slug).single();
         
