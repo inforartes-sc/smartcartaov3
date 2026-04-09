@@ -1722,7 +1722,15 @@ const cleanNumeric = (val: any) => {
         // Fetch default logo from settings for main site sharing
         try {
           const { data: settings } = await supabase.from('settings').select('default_logo, landing_hero_description').single();
-          if (settings?.default_logo) image = settings.default_logo;
+          if (settings?.default_logo) {
+            // Ensure absolute URL
+            let logoUrl = settings.default_logo;
+            if (logoUrl.startsWith('/')) {
+              logoUrl = `https://${req.get('host')}${logoUrl}`;
+            }
+            // Add cache-buster to force WhatsApp to reload
+            image = `${logoUrl}?v=${Date.now()}`;
+          }
           if (settings?.landing_hero_description) description = settings.landing_hero_description;
         } catch (e) {}
       } else {
