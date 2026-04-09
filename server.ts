@@ -1617,157 +1617,93 @@ const cleanNumeric = (val: any) => {
 
 
 
-  // Standard SPA Routes with default metadata (Landing Page, Login, Register, etc.)
-  app.get(['/', '/login', '/register', '/plans', '/admin', '/admin/*', '/dashboard', '/dashboard/*'], async (req, res, next) => {
-    try {
-      const indexPath = path.join(process.cwd(), 'index.html');
-      if (!fs.existsSync(indexPath)) return next();
-      
-      let html = fs.readFileSync(indexPath, 'utf-8');
-      if (vite) html = await vite.transformIndexHtml('/', html);
+  // Dynamic SEO Routes (Handle metadata injection for bots and specific landing views)
 
-      html = html.replaceAll('{{title}}', 'Smart Cartão')
-                 .replaceAll('{{description}}', 'Crie seu cartão digital agora')
-                 .replaceAll('{{image}}', 'https://smartcartao.com/og-default.png');
+  // Meta Tags for Home Page
+  app.get('/', async (req, res, next) => {
+    // Detect bots
+    const ua = req.headers['user-agent'] || '';
+    const isBot = /WhatsApp|Telegram|facebookexternalhit|Twitterbot|Slackbot/i.test(ua);
+    
+    // Standard users continue to Vercel's static serving (handled in vercel.json)
+    // But if we are here via a rewrite or for a bot, we serve the HTML
+    try {
+      let title = 'Smart Cartão';
+      let description = 'Crie seu cartão digital agora e profissionalize suas vendas.';
+      let image = 'https://smartcartao.com.br/apple-touch-icon.png';
       
-      res.setHeader('Content-Type', 'text/html');
-      return res.status(200).send(html);
-    } catch (e) {
-      next();
-    }
+      try {
+        const { data: settings } = await supabase.from('settings').select('default_logo, landing_hero_description').single();
+        if (settings?.default_logo) { 
+           image = settings.default_logo;
+           if (image.startsWith('/')) image = `https://${req.get('host')}${image}`;
+           image = `${image}?v=prod`; 
+        }
+        if (settings?.landing_hero_description) description = settings.landing_hero_description;
+      } catch (e) {}
+
+      return serveDynamicHtml(req, res, next, title, description, image);
+    } catch (err) { next(); }
   });
 
-  // Dynamic OG Tags for profiles (Must be AFTER API routes but BEFORE Vite/Prod fallbacks)
-  app.get(['/', '/:slug', '/:slug/catalogo'], async (req, res, next) => {
+  // Dynamic OG Tags for profiles
+  app.get(['/:slug', '/:slug/catalogo'], async (req, res, next) => {
     const isCatalog = req.path.includes('/catalogo');
-    const slug = req.params.slug || 'home';
+    const slug = req.params.slug;
     
-    // Reserved keywords that should use regular site metadata
-    const reserved = [
-      'admin', 'login', 'dashboard', 'pricing', 'onboarding', 'register', 
-      'master', 'financeiro', 'settings', 'plans', 'users', 'master-admin',
-      'home', 'index', 'app'
-    ];
-    
-    // Ignore internal files, paths with dots, or starting with @
-    if (slug.includes('.') || slug.startsWith('@')) {
+    const reserved = ['admin', 'login', 'dashboard', 'pricing', 'onboarding', 'register', 'master', 'financeiro', 'settings', 'plans', 'users', 'master-admin'];
+    if (!slug || slug.includes('.') || slug.startsWith('@') || reserved.includes(slug.toLowerCase())) {
       return next();
     }
 
-    const isReserved = reserved.includes(slug.toLowerCase());
-    
     try {
-      console.log(`🔍 [SLUG-ROUTE] Serving metadata for: ${slug}`);
-      
-      let html = '';
-      try {
-        const potentialFile = path.resolve(process.cwd(), 'index.html');
-        const potentialDist = path.resolve(process.cwd(), 'dist/templ.html');
-        const isVercel = !!process.env.VERCEL;
-        
-        console.log(`🛠️ [DEBUG] Env: ${process.env.NODE_ENV}, Vercel: ${isVercel}`);
-        console.log(`📂 [DEBUG] Checking: ${potentialDist}`);
-        
-        // List files for debugging if not found
-        if (!fs.existsSync(potentialDist)) {
-          try {
-            const files = fs.readdirSync(process.cwd());
-            console.log(`📁 [DEBUG] Root Files: ${files.join(', ')}`);
-            if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
-              const distFiles = fs.readdirSync(path.join(process.cwd(), 'dist'));
-              console.log(`📁 [DEBUG] Dist Files: ${distFiles.join(', ')}`);
-            }
-          } catch (e) {}
-        }
-
-        if (fs.existsSync(potentialDist)) {
-          html = fs.readFileSync(potentialDist, 'utf-8');
-        } else if (fs.existsSync(potentialFile)) {
-          html = fs.readFileSync(potentialFile, 'utf-8');
-        } else {
-           console.log("⚠️ Using internal fallback HTML with OG Tags");
-           html = `<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{title}}</title>
-    <meta name="description" content="{{description}}" />
-    <meta property="og:title" content="{{title}}" />
-    <meta property="og:description" content="{{description}}" />
-    <meta property="og:image" content="{{image}}" />
-    <meta property="og:image:secure_url" content="{{image}}" />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:type" content="website" />
-    <link rel="image_src" href="{{image}}" />
-</head>
-<body>
-    <div id="root"></div>
-    <script type="module" src="/assets/index.js"></script>
-</body>
-</html>`;
-        }
-      } catch (e) {
-        html = `<!DOCTYPE html><html><head><title>Smart Cartão</title></head><body><div id="root"></div></body></html>`;
-      }
-
-      // Crucial: Injetar o Preamble do Vite usando path base '/' para garantir funcionamento local
-      if (vite) {
-         html = await vite.transformIndexHtml('/', html);
-      }
-      
-      // Fallback values
       let title = 'Smart Cartão';
       let description = 'Crie seu cartão digital agora';
-      let image = 'https://smartcartao.com/og-default.png';
+      let image = 'https://smartcartao.com.br/apple-touch-icon.png';
 
-      if (isReserved) {
-        // Fetch default logo from settings for main site sharing
-        try {
-          const { data: settings } = await supabase.from('settings').select('default_logo, landing_hero_description').single();
-          if (settings?.default_logo) {
-            // Ensure absolute URL
-            let logoUrl = settings.default_logo;
-            if (logoUrl.startsWith('/')) {
-              logoUrl = `https://${req.get('host')}${logoUrl}`;
-            }
-            // Add cache-buster to force WhatsApp to reload
-            image = `${logoUrl}?v=${Date.now()}`;
-          }
-          if (settings?.landing_hero_description) description = settings.landing_hero_description;
-        } catch (e) {}
-      } else {
-        // Use ilike for case-insensitive slug match
-        const { data: profile } = await supabase.from('profiles').select('*').ilike('slug', slug).single();
-        
-        if (profile) {
-          console.log(`✅ Profile found: ${profile.username}`);
-          title = isCatalog ? `Catálogo | ${profile.display_name}` : `${profile.display_name} - Smart Cartão`;
-          description = profile.role_title || 'Meu Cartão Digital';
-          image = profile.profile_image || profile.profile_banner_image || profile.card_background_image || image;
-        } else {
-          console.log(`🤷 Profile not found for slug: ${slug}, using fallback`);
-        }
+      const { data: profile } = await supabase.from('profiles').select('*').ilike('slug', slug).single();
+      
+      if (profile) {
+        title = isCatalog ? `Catálogo | ${profile.display_name}` : `${profile.display_name} - Smart Cartão`;
+        description = profile.role_title || 'Meu Cartão Digital';
+        image = profile.profile_image || profile.profile_banner_image || profile.card_background_image || image;
+        if (image.startsWith('/')) image = `https://${req.get('host')}${image}`;
       }
       
-      // Global replacement to ensure all instances are swapped
-      html = html.replace(/<title>.*?<\/title>/gi, `<title>${title}</title>`)
-                 .replace(/{{title}}/g, title)
-                 .replace(/{{description}}/g, description)
-                 .replace(/{{image}}/g, image);
+      return serveDynamicHtml(req, res, next, title, description, image);
+    } catch (err) { next(); }
+  });
+
+  // Helper to serve HTML with replacements
+  async function serveDynamicHtml(req: any, res: any, next: any, title: string, description: string, image: string) {
+    try {
+      const possiblePaths = [
+        path.join(process.cwd(), 'dist', 'templ.html'),
+        path.join(process.cwd(), 'index.html'),
+        path.resolve(__dirname, 'index.html')
+      ];
       
-      // Safety: If for some reason tokens still exist, clean them up
-      html = html.replace(/{{title}}|{{description}}|{{image}}/g, '');
+      let indexPath = possiblePaths.find(p => fs.existsSync(p));
+      let html = '';
       
+      if (indexPath) {
+        html = fs.readFileSync(indexPath, 'utf-8');
+      } else {
+        html = `<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8"><title>{{title}}</title><meta property="og:title" content="{{title}}"/><meta property="og:description" content="{{description}}"/><meta property="og:image" content="{{image}}"/></head><body><div id="root"></div><script type="module" src="/assets/index.js"></script></body></html>`;
+      }
+      
+      const finalHtml = html.replace(/<title>.*?<\/title>/gi, `<title>${title}</title>`)
+                           .replace(/{{title}}/g, title)
+                           .replace(/{{description}}/g, description)
+                           .replace(/{{image}}/g, image)
+                           .replace(/{{title}}|{{description}}|{{image}}/g, ''); // CLEANUP
+
       res.setHeader('Content-Type', 'text/html');
-      return res.status(200).send(html);
-    } catch (err) {
-      console.error("❌ Error serving dynamic tags for slug:", slug, err);
+      return res.status(200).send(finalHtml);
+    } catch (e) {
       next();
     }
-  });
+  }
 
   // AFTER Slug route, add Vite middleware (Dev fallback for system pages like /login, /dashboard)
   if (vite) {
