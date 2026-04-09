@@ -1732,10 +1732,14 @@ const cleanNumeric = (val: any) => {
         }
       }
       
-      html = html.replace(/<title>.*<\/title>/, `<title>${title}</title>`)
-                 .replaceAll('{{title}}', title)
-                 .replaceAll('{{description}}', description)
-                 .replaceAll('{{image}}', image);
+      // Global replacement to ensure all instances are swapped
+      html = html.replace(/<title>.*?<\/title>/gi, `<title>${title}</title>`)
+                 .replace(/{{title}}/g, title)
+                 .replace(/{{description}}/g, description)
+                 .replace(/{{image}}/g, image);
+      
+      // Safety: If for some reason tokens still exist, clean them up
+      html = html.replace(/{{title}}|{{description}}|{{image}}/g, '');
       
       res.setHeader('Content-Type', 'text/html');
       return res.status(200).send(html);
