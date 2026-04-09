@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "server.ts",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["dist/**", "index.html"]
+      }
     },
     {
       "src": "package.json",
@@ -19,6 +22,10 @@
     {
       "src": "/uploads/(.*)",
       "dest": "/uploads/$1"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
     },
     {
       "src": "/((?!assets/|public/|uploads/).*)",
