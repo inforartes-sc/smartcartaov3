@@ -1689,7 +1689,35 @@ const cleanNumeric = (val: any) => {
       if (indexPath) {
         html = fs.readFileSync(indexPath, 'utf-8');
       } else {
-        html = `<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8"><title>{{title}}</title><meta property="og:title" content="{{title}}"/><meta property="og:description" content="{{description}}"/><meta property="og:image" content="{{image}}"/></head><body><div id="root"></div><script type="module" src="/assets/index.js"></script></body></html>`;
+        html = `<!DOCTYPE html>
+<html lang="pt-br" prefix="og: http://ogp.me/ns#">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <meta name="description" content="{{description}}" />
+    <meta property="og:title" content="{{title}}" />
+    <meta property="og:description" content="{{description}}" />
+    <meta property="og:image" content="{{image}}" />
+    <meta property="og:image:secure_url" content="{{image}}" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://smartcartao.com.br" />
+    <meta property="og:site_name" content="Smart Cartão" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="{{title}}" />
+    <meta name="twitter:description" content="{{description}}" />
+    <meta name="twitter:image" content="{{image}}" />
+    <link rel="image_src" href="{{image}}" />
+    <link rel="canonical" href="https://smartcartao.com.br" />
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/assets/index.js"></script>
+</body>
+</html>`;
       }
       
       const finalHtml = html.replace(/<title>.*?<\/title>/gi, `<title>${title}</title>`)
