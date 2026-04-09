@@ -1667,6 +1667,18 @@ const cleanNumeric = (val: any) => {
         
         console.log(`🛠️ [DEBUG] Env: ${process.env.NODE_ENV}, Vercel: ${isVercel}`);
         console.log(`📂 [DEBUG] Checking: ${potentialDist}`);
+        
+        // List files for debugging if not found
+        if (!fs.existsSync(potentialDist)) {
+          try {
+            const files = fs.readdirSync(process.cwd());
+            console.log(`📁 [DEBUG] Root Files: ${files.join(', ')}`);
+            if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
+              const distFiles = fs.readdirSync(path.join(process.cwd(), 'dist'));
+              console.log(`📁 [DEBUG] Dist Files: ${distFiles.join(', ')}`);
+            }
+          } catch (e) {}
+        }
 
         if (fs.existsSync(potentialDist)) {
           html = fs.readFileSync(potentialDist, 'utf-8');
