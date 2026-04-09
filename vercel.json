@@ -21,7 +21,7 @@
       "dest": "/uploads/$1"
     },
     {
-      "src": "/(.*)",
+      "src": "/((?!assets/|public/|uploads/).*)",
       "dest": "/templ.html"
     }
   ]
