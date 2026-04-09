@@ -1659,8 +1659,15 @@ const cleanNumeric = (val: any) => {
     try {
       console.log(`🔍 [SLUG-ROUTE] Serving metadata for: ${slug}`);
       
-      const indexPath = path.join(process.cwd(), 'index.html');
-      if (!fs.existsSync(indexPath)) return next();
+      const possiblePaths = [
+        path.join(process.cwd(), 'dist', 'templ.html'),
+        path.join(process.cwd(), 'index.html'),
+        path.resolve(__dirname, 'dist/templ.html'),
+        path.resolve(__dirname, 'index.html')
+      ];
+      
+      const indexPath = possiblePaths.find(p => fs.existsSync(p));
+      if (!indexPath) return next();
       
       let html = fs.readFileSync(indexPath, 'utf-8');
 
