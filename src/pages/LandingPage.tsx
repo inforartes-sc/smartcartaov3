@@ -185,7 +185,11 @@ export default function LandingPage() {
     getS('landing_example1', '/landing/examples.png'),
     getS('landing_example2', '/landing/examples.png'),
     getS('landing_example3', '/landing/examples.png'),
-    getS('landing_example4', '/landing/examples.png')
+    getS('landing_example4', '/landing/examples.png'),
+    getS('landing_example5', '/landing/examples.png'),
+    getS('landing_example6', '/landing/examples.png'),
+    getS('landing_example7', '/landing/examples.png'),
+    getS('landing_example8', '/landing/examples.png')
   ];
 
   // Timer para o carrossel de imagens de exemplo

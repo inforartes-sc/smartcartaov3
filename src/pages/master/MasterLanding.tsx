@@ -18,10 +18,28 @@ import {
   Trash2,
   Image as ImageIcon,
   Smartphone,
-  Plus
+  Plus,
+  GripVertical
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { uploadImage } from '../../lib/supabase';
+import {
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  rectSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export default function MasterLanding() {
   const [loading, setLoading] = useState(true);
@@ -60,18 +78,20 @@ export default function MasterLanding() {
     landing_catalog_btn_link: '',
     landing_catalog_btn_link_auto: '',
     landing_catalog_btn_link_real: '',
-    
-    landing_cta_title: 'PRONTO PARA SER REFERÊNCIA?',
-    landing_cta_subtitle: 'Você está a 5 minutos de ter uma presença digital que vende por você 24 horas por dia.',
-    landing_cta_button: 'CRIAR MEU CATÁLOGO AGORA',
-
     landing_example1: '',
     landing_example2: '',
     landing_example3: '',
     landing_example4: '',
+    landing_example5: '',
+    landing_example6: '',
+    landing_example7: '',
+    landing_example8: '',
     landing_mockup_hero: '',
     landing_mockup_service: '',
     landing_mockup_features: '',
+    landing_cta_title: 'PRONTO PARA SER REFERÊNCIA?',
+    landing_cta_subtitle: 'Você está a 5 minutos de ter uma presença digital que vende por você 24 horas por dia.',
+    landing_cta_button: 'CRIAR MEU CATÁLOGO AGORA',
     landing_faqs: '',
     landing_features_json: ''
   });
@@ -137,6 +157,35 @@ export default function MasterLanding() {
     }
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+       const exampleKeys = ['landing_example1', 'landing_example2', 'landing_example3', 'landing_example4', 'landing_example5', 'landing_example6', 'landing_example7', 'landing_example8'];
+       const oldIndex = exampleKeys.indexOf(active.id);
+       const newIndex = exampleKeys.indexOf(over.id);
+       
+       const newExampleKeys = arrayMove(exampleKeys, oldIndex, newIndex);
+       
+       // Create a new settings object preserving the values but mapping them to the new order of keys
+       // Actually, it's better to just swap the values of the existing keys
+       const newSettings = { ...settings };
+       const currentValues = exampleKeys.map(key => (settings as any)[key]);
+       const movedValues = arrayMove(currentValues, oldIndex, newIndex);
+       
+       exampleKeys.forEach((key, i) => {
+          (newSettings as any)[key] = movedValues[i];
+       });
+       
+       setSettings(newSettings);
+    }
+  };
   const fetchSettings = async () => {
     try {
       const res = await fetch(`/api/admin/settings?t=${Date.now()}`);
@@ -155,6 +204,67 @@ export default function MasterLanding() {
       setLoading(false);
     }
   };
+
+  function SortableItem(props: any) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+    } = useSortable({id: props.id});
+    
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
+
+    const i = props.index;
+    const field = props.id;
+    
+    return (
+      <div ref={setNodeRef} style={style} className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">Modelo {i}</label>
+          <div {...attributes} {...listeners} className="p-1 hover:bg-gray-100 rounded-md cursor-grab active:cursor-grabbing text-gray-300 hover:text-blue-500 transition-colors">
+            <GripVertical className="w-3 h-3" />
+          </div>
+        </div>
+        <div className="relative h-48 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden group">
+            {(settings as any)[field] ? (
+              <img src={(settings as any)[field]} className="w-full h-full object-cover" alt={`Model ${i}`} />
+            ) : (
+              <div className="text-center text-gray-300">
+                <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                <p className="text-[10px] uppercase font-black tracking-widest">Vazio</p>
+              </div>
+            )}
+            
+            <label className="absolute inset-0 bg-blue-600/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white cursor-pointer transition-all duration-300 backdrop-blur-sm">
+              {uploading === field ? (
+                <Loader2 className="w-8 h-8 animate-spin" />
+              ) : (
+                <>
+                  <Camera className="w-6 h-6 mb-1" />
+                  <span className="font-black text-[8px] uppercase tracking-widest">Subir</span>
+                </>
+              )}
+              <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, field)} disabled={uploading !== null} />
+            </label>
+
+            {(settings as any)[field] && (
+              <button 
+                type="button"
+                onClick={() => setSettings({...settings, [field]: ''})} 
+                className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
+        </div>
+      </div>
+    );
+  }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     try {
@@ -203,7 +313,7 @@ export default function MasterLanding() {
   const tabs = [
     { id: 'hero', name: 'Hero', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'concept', name: 'Conceito', icon: <Layers className="w-4 h-4" /> },
-    { id: 'models', name: 'Modelos (4)', icon: <ImageIcon className="w-4 h-4" /> },
+    { id: 'models', name: 'Modelos (8)', icon: <ImageIcon className="w-4 h-4" /> },
     { id: 'screens', name: 'Telões', icon: <Smartphone className="w-4 h-4" /> },
     { id: 'features', name: 'Recursos', icon: <Zap className="w-4 h-4" /> },
     { id: 'service', name: 'Seção "Vermelha"', icon: <List className="w-4 h-4" /> },
@@ -333,48 +443,25 @@ export default function MasterLanding() {
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-gray-800 uppercase italic">Modelos de Exemplo</h2>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">As 4 imagens da grade lateral</p>
+                   <p className="text-[10px] text-gray-400 font-bold uppercase">As 8 imagens da grade lateral do carrossel</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="space-y-4">
-                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">Modelo {i}</label>
-                    <div className="relative h-64 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden group">
-                       {(settings as any)[`landing_example${i}`] ? (
-                         <img src={(settings as any)[`landing_example${i}`]} className="w-full h-full object-cover" alt={`Model ${i}`} />
-                       ) : (
-                         <div className="text-center text-gray-300">
-                            <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-20" />
-                            <p className="text-[10px] uppercase font-black tracking-widest">Sem Imagem</p>
-                         </div>
-                       )}
-                       
-                       <label className="absolute inset-0 bg-blue-600/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white cursor-pointer transition-all duration-300 backdrop-blur-sm">
-                          {uploading === `landing_example${i}` ? (
-                            <Loader2 className="w-8 h-8 animate-spin" />
-                          ) : (
-                            <>
-                              <Camera className="w-8 h-8 mb-2" />
-                              <span className="font-black text-xs uppercase tracking-widest">Enviar Imagem</span>
-                            </>
-                          )}
-                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, `landing_example${i}`)} disabled={uploading !== null} />
-                       </label>
-
-                       {(settings as any)[`landing_example${i}`] && (
-                         <button 
-                           type="button"
-                           onClick={() => setSettings({...settings, [`landing_example${i}`]: ''})} 
-                           className="absolute top-4 right-4 p-3 bg-red-500 text-white rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
-                         >
-                           <Trash2 className="w-4 h-4" />
-                         </button>
-                       )}
-                    </div>
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext 
+                    items={['landing_example1', 'landing_example2', 'landing_example3', 'landing_example4', 'landing_example5', 'landing_example6', 'landing_example7', 'landing_example8']}
+                    strategy={rectSortingStrategy}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                      <SortableItem key={`landing_example${i}`} id={`landing_example${i}`} index={i} />
+                    ))}
+                  </SortableContext>
+                </DndContext>
               </div>
             </div>
           )}

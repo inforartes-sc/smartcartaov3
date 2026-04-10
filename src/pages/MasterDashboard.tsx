@@ -48,6 +48,10 @@ export default function MasterDashboard() {
     landing_example2: '',
     landing_example3: '',
     landing_example4: '',
+    landing_example5: '',
+    landing_example6: '',
+    landing_example7: '',
+    landing_example8: '',
     landing_catalog_btn_link_auto: '',
     landing_catalog_btn_link_real: '',
     landing_features_json: ''
