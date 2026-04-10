@@ -47,7 +47,10 @@ export default function MasterDashboard() {
     landing_example1: '',
     landing_example2: '',
     landing_example3: '',
-    landing_example4: ''
+    landing_example4: '',
+    landing_catalog_btn_link_auto: '',
+    landing_catalog_btn_link_real: '',
+    landing_features_json: ''
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -152,7 +155,7 @@ export default function MasterDashboard() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-[60] w-72 bg-[#0f172a] text-white transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-64 lg:static lg:h-screen lg:shrink-0
+        fixed inset-y-0 left-0 z-[60] w-72 bg-[#0f172a] text-white transform transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:translate-x-0 lg:w-64 lg:h-screen lg:shrink-0
         ${isSidebarOpen ? 'translate-x-0 shadow-2xl shadow-blue-500/10' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full overflow-hidden">
@@ -238,7 +241,7 @@ export default function MasterDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-grow p-4 lg:p-8 overflow-y-auto w-full max-w-7xl mx-auto lg:mx-0">
+      <main className="flex-grow p-4 lg:p-8 w-full max-w-7xl mx-auto lg:mx-0">
         {dataLoading ? (
             <div className="h-full flex flex-col items-center justify-center text-blue-600 font-black animate-pulse uppercase tracking-[0.2em] space-y-4">
                 <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>

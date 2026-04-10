@@ -58,6 +58,8 @@ export default function MasterLanding() {
     landing_catalog_text: 'Construído para maximizar seus resultados. Uma experiência fluida que guia seu cliente até o fechamento da venda, sem distrações.',
     landing_catalog_btn_text: 'VER NA PRÁTICA',
     landing_catalog_btn_link: '',
+    landing_catalog_btn_link_auto: '',
+    landing_catalog_btn_link_real: '',
     
     landing_cta_title: 'PRONTO PARA SER REFERÊNCIA?',
     landing_cta_subtitle: 'Você está a 5 minutos de ter uma presença digital que vende por você 24 horas por dia.',
@@ -70,7 +72,8 @@ export default function MasterLanding() {
     landing_mockup_hero: '',
     landing_mockup_service: '',
     landing_mockup_features: '',
-    landing_faqs: ''
+    landing_faqs: '',
+    landing_features_json: ''
   });
 
   const [testimonials, setTestimonials] = useState<any[]>([]);
@@ -136,10 +139,15 @@ export default function MasterLanding() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('/api/admin/settings');
+      const res = await fetch(`/api/admin/settings?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
-        setSettings(prev => ({ ...prev, ...data }));
+        // Force strings to be at least empty strings to avoid null issues in controlled inputs
+        const normalizedData = { ...data };
+        Object.keys(normalizedData).forEach(key => {
+          if (normalizedData[key] === null) normalizedData[key] = '';
+        });
+        setSettings(prev => ({ ...prev, ...normalizedData }));
       }
     } catch (err) {
       toast.error('Erro ao carregar configurações');
@@ -503,11 +511,97 @@ export default function MasterLanding() {
           )}
 
           {activeTab === 'features' && (
-            <div className="space-y-8 animate-in fade-in duration-300 text-center py-10">
-               <h2 className="text-2xl font-black text-gray-800 uppercase italic">Título Grid Recursos</h2>
-               <div className="space-y-2 max-w-md mx-auto">
-                <input type="text" value={settings.landing_features_title} onChange={(e) => setSettings({ ...settings, landing_features_title: e.target.value })} className="w-full px-6 py-5 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm outline-none focus:ring-4 focus:ring-blue-100 font-black uppercase italic text-center" />
-              </div>
+            <div className="space-y-8 animate-in fade-in duration-300">
+               <div className="flex items-center gap-3 border-b border-gray-50 pb-6">
+                 <div className="p-3 bg-blue-600 rounded-2xl text-white">
+                   <Zap className="w-6 h-6" />
+                 </div>
+                 <div>
+                   <h2 className="text-xl font-black text-gray-800 uppercase italic">Grid de Recursos</h2>
+                   <p className="text-[10px] text-gray-400 font-bold uppercase">Edite os 6 cards de funcionalidades</p>
+                 </div>
+               </div>
+
+               <div className="space-y-8">
+                 <div className="space-y-2 max-w-md">
+                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">Título da Seção</label>
+                    <input type="text" value={settings.landing_features_title} onChange={(e) => setSettings({ ...settings, landing_features_title: e.target.value })} className="w-full px-6 py-5 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm outline-none focus:ring-4 focus:ring-blue-100 font-black uppercase italic" />
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {(() => {
+                      let featuresList = [];
+                      try {
+                        featuresList = typeof settings.landing_features_json === 'string' 
+                          ? JSON.parse(settings.landing_features_json || '[]')
+                          : settings.landing_features_json || [];
+                      } catch (e) { featuresList = []; }
+
+                      if (featuresList.length === 0) {
+                         featuresList = [
+                            { id: 'f1', icon: 'LayoutTemplate', title: "Catálogo Profissional", description: "Organize seus produtos por categorias, marcas e anos com filtros inteligentes.", color: "bg-blue-500" },
+                            { id: 'f2', icon: 'MessageCircle', title: "Vendas no WhatsApp", description: "Seus clientes escolhem os produtos e enviam o carrinho direto para o seu WhatsApp.", color: "bg-green-500" },
+                            { id: 'f3', icon: 'TrendingUp', title: "Aumento de Conversão", description: "Interface intuitiva e rápida que elimina a indecisão e acelera o fechamento.", color: "bg-red-500" },
+                            { id: 'f4', icon: 'Smartphone', title: "App no Celular", description: "Pode ser 'instalado' como um aplicativo (PWA) na tela inicial do seu cliente.", color: "bg-purple-500" },
+                            { id: 'f5', icon: 'BarChart3', title: "Métricas Reais", description: "Saiba quais produtos são mais vistos e entenda o comportamento da sua audiência.", color: "bg-slate-800" },
+                            { id: 'f6', icon: 'Globe', title: "Links Personalizados", description: "Adicione suas redes sociais, sites e contatos em um só lugar de forma estratégica e profissional.", color: "bg-indigo-600" }
+                         ];
+                      }
+
+                      const iconOptions = ['LayoutTemplate', 'MessageCircle', 'TrendingUp', 'Smartphone', 'BarChart3', 'Globe', 'ShieldCheck', 'Zap', 'Star'];
+
+                      return featuresList.map((f: any, i: number) => (
+                        <div key={i} className="p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100 space-y-4 relative group">
+                           <div className="flex items-center gap-4 mb-4">
+                              <div className={`w-12 h-12 ${f.color} rounded-2xl flex items-center justify-center text-white shadow-lg`}>
+                                 <Plus className="w-6 h-6" /> {/* Generic since dynamic icons as components in state is hard */}
+                              </div>
+                              <div className="flex-grow">
+                                 <label className="text-[9px] font-black uppercase text-gray-400">Ícone</label>
+                                 <select 
+                                   value={f.icon}
+                                   onChange={(e) => {
+                                      const nf = [...featuresList];
+                                      nf[i].icon = e.target.value;
+                                      setSettings({...settings, landing_features_json: JSON.stringify(nf)});
+                                   }}
+                                   className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold"
+                                 >
+                                    {iconOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                 </select>
+                              </div>
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[9px] font-black uppercase text-gray-400">Título</label>
+                              <input 
+                                type="text" 
+                                value={f.title}
+                                onChange={(e) => {
+                                  const nf = [...featuresList];
+                                  nf[i].title = e.target.value;
+                                  setSettings({...settings, landing_features_json: JSON.stringify(nf)});
+                                }}
+                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-xs font-black uppercase"
+                              />
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[9px] font-black uppercase text-gray-400">Descrição</label>
+                              <textarea 
+                                rows={2}
+                                value={f.description}
+                                onChange={(e) => {
+                                  const nf = [...featuresList];
+                                  nf[i].description = e.target.value;
+                                  setSettings({...settings, landing_features_json: JSON.stringify(nf)});
+                                }}
+                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-[11px] font-medium resize-none"
+                              />
+                           </div>
+                        </div>
+                      ));
+                    })()}
+                 </div>
+               </div>
             </div>
           )}
 
@@ -580,12 +674,19 @@ export default function MasterLanding() {
                  
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-50">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">Texto do Botão na Prática</label>
-                       <input type="text" value={settings.landing_catalog_btn_text} onChange={(e) => setSettings({ ...settings, landing_catalog_btn_text: e.target.value })} className="w-full px-6 py-4 bg-gray-50 border border-blue-100 rounded-2xl text-xs font-black uppercase" placeholder="VER NA PRÁTICA" />
+                       <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">Título Centralizador (ex: VER NA PRÁTICA)</label>
+                       <input type="text" value={settings.landing_catalog_btn_text} onChange={(e) => setSettings({ ...settings, landing_catalog_btn_text: e.target.value })} className="w-full px-6 py-4 bg-gray-50 border border-blue-100 rounded-2xl text-xs font-black text-center uppercase" placeholder="VER NA PRÁTICA" />
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase text-blue-600 tracking-widest pl-1">Link Modelo Automotivo</label>
+                       <input type="text" value={settings.landing_catalog_btn_link_auto} onChange={(e) => setSettings({ ...settings, landing_catalog_btn_link_auto: e.target.value })} className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl text-xs font-medium" placeholder="Ex: https://smartcartao.com.br/veiculos" />
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">URL de Redirecionamento (Vazio = Cadastro)</label>
-                       <input type="text" value={settings.landing_catalog_btn_link} onChange={(e) => setSettings({ ...settings, landing_catalog_btn_link: e.target.value })} className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl text-xs font-medium" placeholder="Ex: https://meulink.com/catalogo..." />
+                       <label className="text-[10px] font-black uppercase text-blue-600 tracking-widest pl-1">Link Modelo Imobiliário</label>
+                       <input type="text" value={settings.landing_catalog_btn_link_real} onChange={(e) => setSettings({ ...settings, landing_catalog_btn_link_real: e.target.value })} className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl text-xs font-medium" placeholder="Ex: https://smartcartao.com.br/imoveis" />
                     </div>
                  </div>
                </div>

@@ -196,44 +196,74 @@ export default function LandingPage() {
     return () => clearInterval(timer);
   }, [exampleImages.length]);
 
-  const features = [
+  const defaultFeatures = [
     {
-      icon: <LayoutTemplate className="w-10 h-10" />,
+      id: 'f1',
+      icon: 'LayoutTemplate',
       title: "Catálogo Profissional",
       description: "Organize seus produtos por categorias, marcas e anos com filtros inteligentes.",
       color: "bg-blue-500"
     },
     {
-      icon: <MessageCircle className="w-10 h-10" />,
+      id: 'f2',
+      icon: 'MessageCircle',
       title: "Vendas no WhatsApp",
       description: "Seus clientes escolhem os produtos e enviam o carrinho direto para o seu WhatsApp.",
       color: "bg-green-500"
     },
     {
-      icon: <TrendingUp className="w-10 h-10" />,
+      id: 'f3',
+      icon: 'TrendingUp',
       title: "Aumento de Conversão",
       description: "Interface intuitiva e rápida que elimina a indecisão e acelera o fechamento.",
       color: "bg-red-500"
     },
     {
-      icon: <Smartphone className="w-10 h-10" />,
+      id: 'f4',
+      icon: 'Smartphone',
       title: "App no Celular",
       description: "Pode ser 'instalado' como um aplicativo (PWA) na tela inicial do seu cliente.",
       color: "bg-purple-500"
     },
     {
-      icon: <BarChart3 className="w-10 h-10" />,
+      id: 'f5',
+      icon: 'BarChart3',
       title: "Métricas Reais",
       description: "Saiba quais produtos são mais vistos e entenda o comportamento da sua audiência.",
       color: "bg-slate-800"
     },
     {
-      icon: <Globe className="w-10 h-10" />,
+      id: 'f6',
+      icon: 'Globe',
       title: "Links Personalizados",
       description: "Adicione suas redes sociais, sites e contatos em um só lugar de forma estratégica e profissional.",
       color: "bg-indigo-600"
     }
   ];
+
+  let displayFeatures = defaultFeatures;
+  if (settings?.landing_features_json) {
+    try {
+      const parsedFeatures = typeof settings.landing_features_json === 'string' 
+        ? JSON.parse(settings.landing_features_json) 
+        : settings.landing_features_json;
+      if (Array.isArray(parsedFeatures) && parsedFeatures.length > 0) {
+        displayFeatures = parsedFeatures;
+      }
+    } catch (e) { /* fallback to default */ }
+  }
+
+  const iconMap: Record<string, any> = {
+    'LayoutTemplate': <LayoutTemplate className="w-10 h-10" />,
+    'MessageCircle': <MessageCircle className="w-10 h-10" />,
+    'TrendingUp': <TrendingUp className="w-10 h-10" />,
+    'Smartphone': <Smartphone className="w-10 h-10" />,
+    'BarChart3': <BarChart3 className="w-10 h-10" />,
+    'Globe': <Globe className="w-10 h-10" />,
+    'ShieldCheck': <ShieldCheck className="w-10 h-10" />,
+    'Zap': <Zap className="w-10 h-10" />,
+    'Star': <Star className="w-10 h-10" />
+  };
 
   const registerUrl = `https://wa.me/${settings?.default_phone || '5592984488888'}?text=${encodeURIComponent('Olá, gostaria de saber mais sobre o Smart Cartão.')}`;
   
@@ -258,7 +288,9 @@ export default function LandingPage() {
 
   if (settings?.landing_faqs) {
     try {
-       const parsedFaqs = JSON.parse(settings.landing_faqs);
+       const parsedFaqs = typeof settings.landing_faqs === 'string'
+          ? JSON.parse(settings.landing_faqs)
+          : settings.landing_faqs;
        if (Array.isArray(parsedFaqs) && parsedFaqs.length > 0) {
           faqs = parsedFaqs;
        }
@@ -570,10 +602,10 @@ export default function LandingPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map((f, i) => (
+              {displayFeatures.map((f: any, i) => (
                 <div key={i} className="p-10 bg-white rounded-[3rem] border border-slate-100 hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-900/10 transition-all duration-500 group flex flex-col items-center text-center">
                   <div className={`w-20 h-20 ${f.color} rounded-[2rem] flex items-center justify-center text-white mb-8 shadow-xl group-hover:rotate-12 transition-all duration-500`}>
-                    {f.icon}
+                    {iconMap[f.icon] || <Zap className="w-10 h-10" />}
                   </div>
                   <h3 className="text-xl font-black text-slate-900 mb-4 uppercase tracking-tight font-heading">{f.title}</h3>
                   <p className="text-slate-500 leading-relaxed font-medium text-sm">
@@ -827,15 +859,28 @@ export default function LandingPage() {
                   </div>
                 </div>
                 
-                <div className="mt-12 pt-8 border-t border-white/10">
-                   <a 
-                    href={getS('landing_catalog_btn_link', '') || registerUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="inline-flex items-center justify-center gap-3 bg-blue-600 text-white px-10 py-5 rounded-full font-black text-sm uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/50"
-                   >
-                     {getS('landing_catalog_btn_text', 'VER NA PRÁTICA')} <ArrowRight className="w-5 h-5" />
-                   </a>
+                <div className="mt-12 pt-8 border-t border-white/10 text-center">
+                   <p className="text-white font-black text-sm uppercase tracking-[0.3em] mb-10">
+                      {getS('landing_catalog_btn_text', 'VER NA PRÁTICA')}
+                   </p>
+                   <div className="flex flex-wrap justify-center gap-6">
+                     <a 
+                      href={getS('landing_catalog_btn_link_auto', registerUrl)} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="inline-flex items-center justify-center gap-3 bg-blue-600 text-white px-10 py-5 rounded-full font-black text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/50"
+                     >
+                       MODELO AUTOMOTIVO <ArrowRight className="w-5 h-5" />
+                     </a>
+                     <a 
+                      href={getS('landing_catalog_btn_link_real', registerUrl)} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="inline-flex items-center justify-center gap-3 bg-white text-blue-950 px-10 py-5 rounded-full font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all shadow-xl shadow-blue-900/20"
+                     >
+                       MODELO IMOBILIÁRIO <ArrowRight className="w-5 h-5" />
+                     </a>
+                   </div>
                 </div>
               </motion.div>
             </div>

@@ -786,9 +786,10 @@ async function setupApp() {
       landing_mockup_hero, landing_mockup_service, landing_mockup_features,
       landing_done_tag, landing_done_title_first, landing_done_title_last, landing_done_text,
       landing_catalog_tag, landing_catalog_title_first, landing_catalog_title_last, landing_catalog_text,
-      landing_catalog_btn_text, landing_catalog_btn_link,
+      landing_catalog_btn_text, landing_catalog_btn_link, 
+      landing_catalog_btn_link_auto, landing_catalog_btn_link_real,
       landing_stats_text, landing_stats_description,
-      landing_faqs
+      landing_faqs, landing_features_json
     } = req.body;
     
     const { error } = await supabase.from('system_settings').update({ 
@@ -804,8 +805,9 @@ async function setupApp() {
       landing_done_tag, landing_done_title_first, landing_done_title_last, landing_done_text,
       landing_catalog_tag, landing_catalog_title_first, landing_catalog_title_last, landing_catalog_text,
       landing_catalog_btn_text, landing_catalog_btn_link,
+      landing_catalog_btn_link_auto, landing_catalog_btn_link_real,
       landing_stats_text, landing_stats_description,
-      landing_faqs
+      landing_faqs, landing_features_json
     }).eq('id', 1);
     
     if (error) {
@@ -1621,26 +1623,29 @@ const cleanNumeric = (val: any) => {
 
   // Meta Tags for Home Page
   app.get('/', async (req, res, next) => {
-    // Detect bots
     const ua = req.headers['user-agent'] || '';
-    const isBot = /WhatsApp|Telegram|facebookexternalhit|Twitterbot|Slackbot/i.test(ua);
+    const isBot = /WhatsApp|Telegram|facebookexternalhit|Twitterbot|Slackbot/i.test(ua) || req.query.bot === '1';
     
-    // Standard users continue to Vercel's static serving (handled in vercel.json)
-    // But if we are here via a rewrite or for a bot, we serve the HTML
+    if (!isBot) return next();
+
     try {
       let title = 'Smart Cartão';
       let description = 'Crie seu cartão digital agora e profissionalize suas vendas.';
       let image = 'https://smartcartao.com.br/apple-touch-icon.png';
       
       try {
-        const { data: settings } = await supabase.from('settings').select('default_logo, landing_hero_description').single();
-        if (settings?.default_logo) { 
-           image = settings.default_logo;
-           if (image.startsWith('/')) image = `https://${req.get('host')}${image}`;
-           image = `${image}?v=prod`; 
+        const { data: settings } = await supabase.from('system_settings').select('*').eq('id', 1).single();
+        if (settings) {
+          if (settings.default_logo) { 
+             image = settings.default_logo;
+             if (image.startsWith('/')) image = `https://${req.get('host')}${image}`;
+             if (!image.startsWith('http')) image = `https://${req.get('host')}/${image.replace(/^\//, '')}`;
+          }
+          if (settings.landing_hero_subtitle) description = settings.landing_hero_subtitle;
         }
-        if (settings?.landing_hero_description) description = settings.landing_hero_description;
-      } catch (e) {}
+      } catch (e) {
+        console.error('SEO Fetch Error:', e);
+      }
 
       return serveDynamicHtml(req, res, next, title, description, image);
     } catch (err) { next(); }
@@ -1688,6 +1693,10 @@ const cleanNumeric = (val: any) => {
       
       if (indexPath) {
         html = fs.readFileSync(indexPath, 'utf-8');
+        // Transform HTML with Vite in dev mode to ensure scripts/HMR work correctly
+        if (vite && process.env.NODE_ENV !== 'production') {
+          html = await vite.transformIndexHtml(req.originalUrl, html);
+        }
       } else {
         html = `<!DOCTYPE html>
 <html lang="pt-br" prefix="og: http://ogp.me/ns#">
