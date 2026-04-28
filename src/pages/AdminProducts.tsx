@@ -450,36 +450,36 @@ export default function AdminProducts() {
 
               <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 md:p-8 space-y-6 md:space-y-8 scrollbar-hide">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                  {/* Nome do Item */}
-                  <div>
-                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Nome do Item *</label>
-                    <input type="text" required value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} className="w-full h-14 px-5 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-bold text-lg transition-all" />
+                  {/* Nome do Item - AGORA NO TOPO (Full Width) */}
+                  <div className="lg:col-span-2">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Nome do Veículo / Item *</label>
+                    <input type="text" required value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} className="w-full h-14 px-5 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-black text-xl transition-all uppercase tracking-tight" placeholder="Ex: HONDA CIVIC SEDAN LXR 2.0" />
                   </div>
 
-                   {/* Especificações (Ano, Preço, KM / Área) */}
-                   <div className="bg-gray-50/50 p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                   {/* Especificações - AGORA EMBAIXO E MAIS LARGO */}
+                   <div className="lg:col-span-2 bg-gray-50/50 p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-gray-100 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 md:gap-4">
                      {userNiche === 'vehicle' ? (
                        <>
                          <div className="col-span-1">
                            <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Marca</label>
-                           <input type="text" value={formState.brand} onChange={e => setFormState({...formState, brand: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all" placeholder="Ex: Toyota" />
+                           <input type="text" value={formState.brand} onChange={e => setFormState({...formState, brand: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all text-xs font-bold" placeholder="Marca" />
                          </div>
                          <div className="col-span-1">
                            <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Ano</label>
-                           <input type="text" value={formState.year} onChange={e => setFormState({...formState, year: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all" placeholder="2024" />
+                           <input type="text" value={formState.year} onChange={e => setFormState({...formState, year: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all text-xs font-bold text-center" placeholder="2024" />
                          </div>
                          <div className="col-span-1">
                            <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Preço</label>
-                           <input type="text" value={formState.price} onChange={handlePriceChange} className="w-full h-12 px-4 bg-white border border-blue-200 rounded-xl shadow-sm text-blue-600 font-bold focus:border-blue-500 outline-none transition-all" placeholder="0,00" />
+                           <input type="text" value={formState.price} onChange={handlePriceChange} className="w-full h-12 px-3 bg-white border border-blue-200 rounded-xl shadow-sm text-blue-600 font-black focus:border-blue-500 outline-none transition-all text-sm" placeholder="0,00" />
                          </div>
                          <div className="col-span-1">
                            <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">KM</label>
-                           <input type="text" value={formState.mileage} onChange={e => setFormState({...formState, mileage: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all" placeholder="0" />
+                           <input type="text" value={formState.mileage} onChange={e => setFormState({...formState, mileage: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all text-xs font-bold text-center" placeholder="0" />
                          </div>
 
                          <div className="col-span-1">
                            <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Condição</label>
-                           <select value={formState.condition} onChange={e => setFormState({...formState, condition: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all font-bold">
+                           <select value={formState.condition} onChange={e => setFormState({...formState, condition: e.target.value})} className="w-full h-12 px-2 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all font-bold text-[10px]">
                              <option value="Novo">Novo</option>
                              <option value="Seminovo">Seminovo</option>
                              <option value="Usado">Usado</option>
@@ -487,7 +487,7 @@ export default function AdminProducts() {
                          </div>
                          <div className="col-span-1">
                            <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Combustível</label>
-                           <select value={formState.fuel} onChange={e => setFormState({...formState, fuel: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all font-bold">
+                           <select value={formState.fuel} onChange={e => setFormState({...formState, fuel: e.target.value})} className="w-full h-12 px-2 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all font-bold text-[10px]">
                              <option value="Flex">Flex</option>
                              <option value="Gasolina">Gasolina</option>
                              <option value="Álcool">Álcool</option>
@@ -498,16 +498,16 @@ export default function AdminProducts() {
                          </div>
                          <div className="col-span-1">
                            <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Câmbio</label>
-                           <select value={formState.transmission} onChange={e => setFormState({...formState, transmission: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all font-bold">
+                           <select value={formState.transmission} onChange={e => setFormState({...formState, transmission: e.target.value})} className="w-full h-12 px-2 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all font-bold text-[10px]">
                              <option value="Manual">Manual</option>
-                             <option value="Automático">Automático</option>
-                             <option value="Automatizado">Automatizado</option>
+                             <option value="Automático">Auto</option>
+                             <option value="Automatizado">Amd</option>
                              <option value="CVT">CVT</option>
                            </select>
                          </div>
                          <div className="col-span-1">
                            <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Cor</label>
-                           <input type="text" value={formState.color} onChange={e => setFormState({...formState, color: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all" placeholder="Ex: Azul" />
+                           <input type="text" value={formState.color} onChange={e => setFormState({...formState, color: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all text-xs font-bold" placeholder="Cor" />
                          </div>
                        </>
                      ) : (
@@ -516,9 +516,9 @@ export default function AdminProducts() {
                            <label className="block text-[9px] font-black text-gray-400 uppercase">Área m²</label>
                            <input type="text" value={formState.area} onChange={e => setFormState({...formState, area: e.target.value})} className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:border-blue-500 outline-none transition-all" />
                          </div>
-                         <div className="col-span-1">
-                           <label className="block text-[9px] font-black text-gray-400 uppercase">Preço</label>
-                           <input type="text" value={formState.price} onChange={handlePriceChange} className="w-full h-12 px-4 bg-white border border-blue-200 rounded-xl shadow-sm text-blue-600 font-bold focus:border-blue-500 outline-none transition-all" />
+                         <div className="col-span-2">
+                            <label className="block text-[9px] font-black text-gray-400 uppercase">Preço</label>
+                            <input type="text" value={formState.price} onChange={handlePriceChange} className="w-full h-12 px-4 bg-white border border-blue-200 rounded-xl shadow-sm text-blue-600 font-bold focus:border-blue-500 outline-none transition-all" />
                          </div>
                        </>
                      )}
