@@ -530,30 +530,68 @@ export default function AdminProducts() {
                     <textarea value={formState.description} onChange={e => setFormState({...formState, description: e.target.value})} className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl h-40 resize-none text-sm shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" />
                   </div>
 
-                  {/* Capa e Galeria - Lado a Lado */}
-                  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase">Capa</label>
-                      <div className="relative h-40 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center overflow-hidden group">
-                        {formState.image ? <img src={formState.image} className="w-full h-full object-contain" alt="C" /> : <Camera className="w-8 h-8 text-gray-200" />}
-                        <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
-                          <span className="text-[10px] font-bold">Alterar</span>
-                          <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, 'image')} />
-                        </label>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase">Galeria</label>
-                      <div className="grid grid-cols-3 gap-2 h-40 bg-gray-50 p-2 rounded-2xl">
-                        {formState.images.map((img, i) => (
-                          <div key={i} className="relative rounded-lg overflow-hidden group">
-                            <img src={img} className="w-full h-full object-cover" alt="G" />
-                            <button type="button" onClick={() => removeGalleryImage(i)} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 opacity-0 group-hover:opacity-100"><X className="w-3 h-3" /></button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                   {/* Capa e Galeria - Lado a Lado */}
+                   <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                     <div>
+                       <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase">Capa</label>
+                       <div className="relative h-40 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center overflow-hidden group">
+                         {formState.image ? <img src={formState.image} className="w-full h-full object-contain" alt="C" /> : <Camera className="w-8 h-8 text-gray-200" />}
+                         <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
+                           <span className="text-[10px] font-bold">Alterar</span>
+                           <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, 'image')} />
+                         </label>
+                       </div>
+                     </div>
+                     <div>
+                       <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase">Galeria</label>
+                       <div className="grid grid-cols-3 gap-2 h-40 bg-gray-50 p-2 rounded-2xl">
+                         {formState.images.map((img, i) => (
+                           <div key={i} className="relative rounded-lg overflow-hidden group">
+                             <img src={img} className="w-full h-full object-cover" alt="G" />
+                             <button type="button" onClick={() => removeGalleryImage(i)} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 opacity-0 group-hover:opacity-100"><X className="w-3 h-3" /></button>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   </div>
+
+                   {/* Cores Disponíveis (Círculos) */}
+                   <div className="lg:col-span-2 bg-gray-50/30 p-6 rounded-3xl border border-gray-100">
+                     <label className="block text-[10px] font-black text-gray-400 uppercase mb-4 tracking-widest">Cores Disponíveis (Círculos)</label>
+                     <div className="flex flex-wrap items-center gap-4">
+                       {formState.colors.map((c, i) => (
+                         <div key={i} className="relative group">
+                           <div className="w-10 h-10 rounded-full border-2 border-white shadow-lg" style={{ backgroundColor: c }} />
+                           <button 
+                             type="button" 
+                             onClick={() => setFormState(prev => ({ ...prev, colors: prev.colors.filter((_, idx) => idx !== i) }))}
+                             className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                           >
+                             <X className="w-3 h-3" />
+                           </button>
+                         </div>
+                       ))}
+                       <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-gray-100">
+                         <input 
+                           type="color" 
+                           value={newColor} 
+                           onChange={e => setNewColor(e.target.value)} 
+                           className="w-8 h-8 rounded-lg cursor-pointer border-none bg-transparent" 
+                         />
+                         <button 
+                           type="button" 
+                           onClick={() => {
+                             if (!formState.colors.includes(newColor)) {
+                               setFormState(prev => ({ ...prev, colors: [...prev.colors, newColor] }));
+                             }
+                           }}
+                           className="px-4 py-2 bg-blue-600 text-white text-[10px] font-black rounded-xl hover:bg-blue-700 transition-all uppercase"
+                         >
+                           Adicionar Cor
+                         </button>
+                       </div>
+                     </div>
+                   </div>
 
                   {/* Vídeo URL - Full Width at Bottom */}
                   <div className="lg:col-span-2 space-y-4">
