@@ -339,8 +339,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 md:h-20">
             <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
-              {settings?.footer_logo || settings?.default_logo ? (
-                <img src={settings.footer_logo || settings.default_logo} className="h-10 md:h-14 object-contain drop-shadow-sm" alt="Logo" />
+              {settings?.default_logo && settings.default_logo.startsWith('http') ? (
+                <img src={settings.default_logo} className="h-10 md:h-14 object-contain drop-shadow-sm" alt="Logo" />
               ) : (
                 <>
                   <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200 group-hover:rotate-6 transition-transform">
@@ -471,8 +471,8 @@ export default function LandingPage() {
                     <div className="absolute top-0 w-[40%] h-7 bg-slate-900 left-1/2 -translate-x-1/2 rounded-b-[1.2rem] z-20"></div>
                     
                     <div className="w-full h-full bg-slate-50 rounded-[2.8rem] sm:rounded-[3.2rem] overflow-hidden pt-12 pb-6 relative shadow-inner">
-                      {getS('landing_mockup_hero', '') ? (
-                        <img src={getS('landing_mockup_hero', '')} alt="Smart Cartão Mockup" className="absolute inset-0 w-full h-full object-cover object-top z-10" />
+                      {getS('landing_mockup_hero', '/landing/hero-mockup.png') ? (
+                        <img src={getS('landing_mockup_hero', '/landing/hero-mockup.png')} alt="Smart Cartão Mockup" className="absolute inset-0 w-full h-full object-cover object-top z-10" />
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-white text-center">
                            <ImageIcon className="w-16 h-16 text-blue-200 mb-4" />
