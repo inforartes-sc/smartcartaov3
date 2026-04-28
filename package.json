@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build && if exist dist\\index.html move /y dist\\index.html dist\\templ.html",
+    "build": "vite build && node post-build.js",
     "start": "node server.ts",
     "preview": "vite preview",
     "clean": "if exist dist rmdir /s /q dist",
