@@ -456,8 +456,8 @@ export default function AdminProducts() {
                     <input type="text" required value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} className="w-full h-14 px-5 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-black text-xl transition-all uppercase tracking-tight" placeholder="Ex: HONDA CIVIC SEDAN LXR 2.0" />
                   </div>
 
-                   {/* Especificações - AGORA EMBAIXO E MAIS LARGO */}
-                   <div className="lg:col-span-2 bg-gray-50/50 p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-gray-100 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 md:gap-4">
+                   {/* Especificações - EM DUAS LINHAS (4 POR LINHA) PARA FICAR MAIOR */}
+                   <div className="lg:col-span-2 bg-gray-50/50 p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                      {userNiche === 'vehicle' ? (
                        <>
                          <div className="col-span-1">
