@@ -66,14 +66,31 @@ export default function Catalog() {
   }, [filteredProducts]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
-  if (!data || data.error) return <div className="min-h-screen flex items-center justify-center text-red-500">Perfil não encontrado</div>;
+  if (!data || data.error) return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50 text-center">
+      <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-red-100">
+        <span className="text-2xl font-black">!</span>
+      </div>
+      <h2 className="text-xl font-black text-gray-800 mb-1">Acesso Indisponível</h2>
+      <p className="text-sm font-medium text-gray-500 max-w-sm">{data?.error || 'Perfil não encontrado ou inativo no sistema.'}</p>
+    </div>
+  );
 
   const { user, products } = data;
 
+  const safeParse = (val: any, fallback: any = []) => {
+    if (!val) return fallback;
+    if (typeof val !== 'string') return val;
+    try {
+      return JSON.parse(val);
+    } catch (e) {
+      return fallback;
+    }
+  };
 
-
-  const isDark = (color: string) => {
-    const hex = (color || '#ffffff').replace('#', '');
+  const isDark = (color?: string) => {
+    if (!color || typeof color !== 'string') return false;
+    const hex = color.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
@@ -81,8 +98,8 @@ export default function Catalog() {
     return brightness < 155;
   };
 
-  const textColor = isDark(user.background_color) ? 'text-white' : 'text-gray-900';
-  const subtitleColor = isDark(user.background_color) ? 'text-gray-300' : 'text-gray-500';
+  const textColor = isDark(user?.background_color || '#ffffff') ? 'text-white' : 'text-gray-900';
+  const subtitleColor = isDark(user?.background_color || '#ffffff') ? 'text-gray-300' : 'text-gray-500';
 
   return (
     <div 
@@ -140,7 +157,13 @@ export default function Catalog() {
                   </a>
                 )}
                 {(() => {
-                   const links = typeof user.social_links === 'string' ? JSON.parse(user.social_links) : (user.social_links || []);
+                   let links = [];
+                   try {
+                     links = typeof user.social_links === 'string' ? JSON.parse(user.social_links) : (user.social_links || []);
+                     if (!Array.isArray(links)) links = [];
+                   } catch (e) {
+                     links = [];
+                   }
                    return links.map((link: any, index: number) => {
                       const SelectedIcon = (iconName: string) => {
                         switch(iconName) {
@@ -337,16 +360,16 @@ export default function Catalog() {
                     <MemoProductCard 
                       product={{
                         ...product,
-                        colors: typeof product.colors === 'string' ? JSON.parse(product.colors) : product.colors,
+                        colors: safeParse(product.colors),
                         hasLiberacred: !!product.has_liberacred,
                         consortiumPlanImage: product.consortium_image,
                         liberacredImage: product.liberacred_image,
-                        images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || []),
-                        optionals: typeof product.optionals === 'string' ? JSON.parse(product.optionals) : (product.optionals || []),
+                        images: safeParse(product.images, []),
+                        optionals: safeParse(product.optionals, []),
                         show_consortium_plans: !!product.show_consortium_plans,
-                        consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || []),
+                        consortium_plans: safeParse(product.consortium_plans, []),
                         show_financing_plans: !!product.show_financing_plans,
-                        financing_plans: typeof product.financing_plans === 'string' ? JSON.parse(product.financing_plans) : (product.financing_plans || []),
+                        financing_plans: safeParse(product.financing_plans, []),
                         cash_price: product.cash_price,
                         card_installments: product.card_installments,
                         card_interest: !!product.card_interest,
@@ -385,16 +408,16 @@ export default function Catalog() {
                       <MemoProductCard 
                         product={{
                           ...product,
-                          colors: typeof product.colors === 'string' ? JSON.parse(product.colors) : product.colors,
+                          colors: safeParse(product.colors),
                           hasLiberacred: !!product.has_liberacred,
                           consortiumPlanImage: product.consortium_image,
                           liberacredImage: product.liberacred_image,
-                          images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || []),
-                          optionals: typeof product.optionals === 'string' ? JSON.parse(product.optionals) : (product.optionals || []),
+                          images: safeParse(product.images, []),
+                          optionals: safeParse(product.optionals, []),
                           show_consortium_plans: !!product.show_consortium_plans,
-                          consortium_plans: typeof product.consortium_plans === 'string' ? JSON.parse(product.consortium_plans) : (product.consortium_plans || []),
+                          consortium_plans: safeParse(product.consortium_plans, []),
                           show_financing_plans: !!product.show_financing_plans,
-                          financing_plans: typeof product.financing_plans === 'string' ? JSON.parse(product.financing_plans) : (product.financing_plans || []),
+                          financing_plans: safeParse(product.financing_plans, []),
                           cash_price: product.cash_price,
                           card_installments: product.card_installments,
                           card_interest: !!product.card_interest,

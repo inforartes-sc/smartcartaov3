@@ -35,6 +35,16 @@ const formatPrice = (value: string | number | undefined) => {
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
 };
 
+const safeParse = (val: any, fallback: any = []) => {
+  if (!val) return fallback;
+  if (typeof val !== 'string') return val;
+  try {
+    return JSON.parse(val);
+  } catch (e) {
+    return fallback;
+  }
+};
+
 export default function ProductCard({ 
   product, 
   whatsappNumber, 
@@ -435,14 +445,14 @@ export default function ProductCard({
             </div>
 
             {/* Opcionais */}
-            {(product.optionals && (typeof product.optionals === 'string' ? JSON.parse(product.optionals) : product.optionals).length > 0) && (
+            {(product.optionals && safeParse(product.optionals).length > 0) && (
               <div className="space-y-3">
                 <h4 className="font-bold text-gray-800 flex items-center gap-2">
                   <Package className="w-4 h-4 text-blue-500" />
                   Opcionais e Itens de Série
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {(typeof product.optionals === 'string' ? JSON.parse(product.optionals) : (product.optionals || [])).map((opt: string) => (
+                  {safeParse(product.optionals).map((opt: string) => (
                     <div key={opt} className="flex items-center gap-2 text-[11px] text-gray-600 bg-gray-50 p-2 rounded-lg border border-gray-100">
                       <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                       {opt}

@@ -27,6 +27,22 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
 const viewCache: Record<string, number> = {};
 const VIEW_COOLDOWN = 60 * 60 * 1000; // 1 hour
 
+// PUBLIC PROFILE CACHE (Slug -> Data)
+// To prevent slamming the DB on every catalog load
+const publicCache: Record<string, { data: any, timestamp: number }> = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Helper to clear profile cache globally or for a specific slug
+function clearPublicCache(slug?: string) {
+  if (slug) {
+    console.log(`[CACHE] Clearing cache for slug: ${slug}`);
+    delete publicCache[slug];
+  } else {
+    console.log('[CACHE] Clearing entire public cache');
+    Object.keys(publicCache).forEach(key => delete publicCache[key]);
+  }
+}
+
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -352,6 +368,7 @@ async function setupApp() {
         await supabase.from('faturas').update({ status: 'paid' }).eq('user_id', final_user_id).eq('status', 'pending');
 
         console.log(`[WEBHOOK] Payment confirmed for user ${final_user_id}. Access extended.`);
+        clearPublicCache();
         return res.json({ success: true, message: 'Payment confirmed and access extended' });
       }
     }
@@ -375,6 +392,7 @@ async function setupApp() {
 
       if (updateError) return res.status(400).json({ error: updateError.message });
       console.log(`[WEBHOOK] Access released for user ${targetId} (+${months} months)`);
+      clearPublicCache();
       return res.json({ success: true, message: 'Access released' });
     }
 
@@ -685,6 +703,7 @@ async function setupApp() {
   app.delete('/api/admin/users/:id', authenticateMaster, async (req, res) => {
     const { error } = await supabase.auth.admin.deleteUser(req.params.id);
     if (error) return res.status(400).json({ error: error.message });
+    clearPublicCache();
     res.json({ success: true });
   });
 
@@ -733,6 +752,7 @@ async function setupApp() {
         .eq('id', req.params.id);
       
       if (error) throw error;
+      clearPublicCache();
       res.json({ success: true });
     } catch (err: any) {
       console.error('Update User Error:', err);
@@ -759,6 +779,7 @@ async function setupApp() {
         .update({ is_admin: !!is_admin })
         .eq('id', req.params.id);
       if (error) throw error;
+      clearPublicCache();
       res.json({ success: true });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
@@ -970,21 +991,7 @@ async function setupApp() {
     }
   });
 
-// PUBLIC PROFILE CACHE (Slug -> Data)
-// To prevent slamming the DB on every catalog load
-const publicCache: Record<string, { data: any, timestamp: number }> = {};
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-// Helper to clear profile cache globally or for a specific slug
-const clearPublicCache = (slug?: string) => {
-  if (slug) {
-    console.log(`[CACHE] Clearing cache for slug: ${slug}`);
-    delete publicCache[slug];
-  } else {
-    console.log('[CACHE] Clearing entire public cache');
-    Object.keys(publicCache).forEach(key => delete publicCache[key]);
-  }
-};
+// PUBLIC PROFILE CACHE MOVED TO TOP
 
 // Public Profile Route
 app.get('/api/profile/:slug', async (req, res) => {
@@ -1010,6 +1017,10 @@ app.get('/api/profile/:slug', async (req, res) => {
 
     if (!finalProfile && memberRes.data) {
       const member = memberRes.data;
+      if (member.is_active === false) {
+        return res.status(403).json({ error: 'Cartão indisponível ou inativo.' });
+      }
+
       // Fetch Hierarchy Info in Parallel
       const [parentRes, rootRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', member.parent_id).single(),
@@ -1018,6 +1029,11 @@ app.get('/api/profile/:slug', async (req, res) => {
 
       const parent = parentRes.data;
       const root = rootRes.data;
+
+      if ((parent && parent.status !== 'active') || (root && root.status !== 'active')) {
+        return res.status(403).json({ error: 'Cartão indisponível ou inativo.' });
+      }
+
       const brandingSource = parent || root;
 
       finalProfile = {
@@ -1043,7 +1059,15 @@ app.get('/api/profile/:slug', async (req, res) => {
       isTeamMember = true;
     }
 
-    if (!finalProfile) return res.status(404).json({ error: 'Perfil não encontrado' });
+    if (!finalProfile) {
+      return res.status(404).json({ error: 'Perfil não encontrado' });
+    }
+
+    if (!isTeamMember && finalProfile) {
+      if (finalProfile.status && finalProfile.status !== 'active') {
+        return res.status(403).json({ error: 'Cartão indisponível ou inativo.' });
+      }
+    }
 
     // 3. Views Management (Non-blocking)
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -1198,6 +1222,7 @@ app.get('/api/profile/:slug', async (req, res) => {
         .single();
 
       if (error) throw error;
+      clearPublicCache();
       res.json({ success: true, member: data });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
@@ -1212,6 +1237,7 @@ app.get('/api/profile/:slug', async (req, res) => {
       .eq('parent_id', req.user.id);
       
     if (error) return res.status(400).json({ error: error.message });
+    clearPublicCache();
     res.json({ success: true });
   });
 
@@ -1336,6 +1362,7 @@ app.get('/api/profile/:slug', async (req, res) => {
         .single();
 
       if (error) throw error;
+      clearPublicCache();
       res.json({ success: true, member: data });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
@@ -1346,6 +1373,7 @@ app.get('/api/profile/:slug', async (req, res) => {
     try {
       const { error } = await supabase.auth.admin.deleteUser(req.params.id);
       if (error) throw error;
+      clearPublicCache();
       res.json({ success: true });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
@@ -1684,8 +1712,13 @@ const cleanNumeric = (val: any) => {
   // Helper to serve HTML with replacements
   async function serveDynamicHtml(req: any, res: any, next: any, title: string, description: string, image: string) {
     try {
-      const possiblePaths = [
+      const isDev = process.env.NODE_ENV !== 'production';
+      const possiblePaths = isDev ? [
+        path.join(process.cwd(), 'index.html'),
+        path.resolve(__dirname, 'index.html')
+      ] : [
         path.join(process.cwd(), 'dist', 'templ.html'),
+        path.join(process.cwd(), 'dist', 'index.html'),
         path.join(process.cwd(), 'index.html'),
         path.resolve(__dirname, 'index.html')
       ];

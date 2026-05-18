@@ -23,18 +23,33 @@ export default function Home() {
   }, [slug]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
-  if (!data || data.error) return <div className="min-h-screen flex items-center justify-center text-red-500">Perfil não encontrado</div>;
+  if (!data || data.error) return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50 text-center">
+      <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-red-100">
+        <span className="text-2xl font-black">!</span>
+      </div>
+      <h2 className="text-xl font-black text-gray-800 mb-1">Acesso Indisponível</h2>
+      <p className="text-sm font-medium text-gray-500 max-w-sm">{data?.error || 'Perfil não encontrado ou inativo no sistema.'}</p>
+    </div>
+  );
 
   const { user } = data;
-  const socialLinks = typeof user.social_links === 'string' ? JSON.parse(user.social_links) : (user.social_links || []);
+  let socialLinks = [];
+  try {
+    socialLinks = typeof user.social_links === 'string' ? JSON.parse(user.social_links) : (user.social_links || []);
+    if (!Array.isArray(socialLinks)) socialLinks = [];
+  } catch (err) {
+    socialLinks = [];
+  }
 
   const handleWhatsAppMain = () => {
-    const message = encodeURIComponent(`Olá ${user.display_name}! Vim pelo seu Cartão Digital.`);
-    const phone = user.whatsapp || settings?.default_phone;
+    const message = encodeURIComponent(`Olá ${user?.display_name || ''}! Vim pelo seu Cartão Digital.`);
+    const phone = user?.whatsapp || settings?.default_phone || '';
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
   };
 
-  const isDark = (color: string) => {
+  const isDark = (color?: string) => {
+    if (!color || typeof color !== 'string') return false;
     const hex = color.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
@@ -43,8 +58,8 @@ export default function Home() {
     return brightness < 155;
   };
 
-  const textColor = isDark(user.background_color || '#ffffff') ? 'text-white' : 'text-gray-900';
-  const subtitleColor = isDark(user.background_color || '#ffffff') ? 'text-gray-300' : 'text-gray-500';
+  const textColor = isDark(user?.background_color || '#ffffff') ? 'text-white' : 'text-gray-900';
+  const subtitleColor = isDark(user?.background_color || '#ffffff') ? 'text-gray-300' : 'text-gray-500';
 
   const getIcon = (iconId: string) => {
     switch (iconId) {
